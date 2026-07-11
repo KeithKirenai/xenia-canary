@@ -13,6 +13,11 @@
 #include "xenia/kernel/kernel_state.h"
 #include "xenia/kernel/xam/xam_content_device.h"
 #include "xenia/kernel/xenumerator.h"
+#include "xenia/hid/kinect/kinect_input_driver.h"
+
+static xe::hid::kinect::KinectInputDriver* kd() {
+  return xe::hid::kinect::KinectInputDriver::instance();
+}
 
 /* Notes:
    - Messages ids that start with 0x00021xxx are UI calls
@@ -178,6 +183,33 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
 
       XELOGD("XamUnk2B003({:016X}, {:016X}, {:016X}), unimplemented",
              args->unk1.get(), args->unk2.get(), args->unk3.get());
+      return X_E_SUCCESS;
+    }
+    case 0x0002B004: {
+      // NUI subsystem startup -- attempt device open.
+      auto* driver = kd();
+      if (!driver) {
+        XELOGD("XamApp: 0x2B004 no KinectInputDriver");
+        return X_E_FAIL;
+      }
+      if (!driver->is_initialized()) {
+        // NUI_INITIALIZE_FLAG_USES_SKELETON
+        X_RESULT result = driver->NuiInitialize(0x08);
+        if (result != X_ERROR_SUCCESS) {
+          XELOGD("XamApp: 0x2B004 NuiInitialize failed ({:08X})", result);
+          return X_E_FAIL;
+        }
+      }
+      XELOGD("XamApp: 0x2B004 NUI device ready");
+      return X_E_SUCCESS;
+    }
+    case 0x0002B005: {
+      return X_E_SUCCESS;
+    }
+    case 0x00021028: {
+      return X_E_SUCCESS;
+    }
+    case 0x00021030: {
       return X_E_SUCCESS;
     }
     // Causes dashboard to correctly process language/region change. It does not
