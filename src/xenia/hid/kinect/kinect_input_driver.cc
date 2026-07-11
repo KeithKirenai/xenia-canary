@@ -5,6 +5,7 @@
  * Copyright 2025 Xenia Canary Authors. All rights reserved.                  *
  * Released under the BSD license - see LICENSE in the root for more details. *
  ******************************************************************************
+ * Based on the experimental, in-progress Kinect HLE implementation by Weronika Saturday (@weronika-saturday).
  */
 
 #include "xenia/hid/kinect/kinect_input_driver.h"

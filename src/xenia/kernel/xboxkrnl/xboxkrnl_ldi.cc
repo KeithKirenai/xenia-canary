@@ -5,6 +5,7 @@
  * Copyright 2025 Ben Vanik. All rights reserved.                             *
  * Released under the BSD license - see LICENSE in the root for more details. *
  ******************************************************************************
+ * Based on the experimental, in-progress Kinect HLE implementation by Weronika Saturday (@weronika-saturday).
  */
 
 // LDI -- LZX Decompression Interface (xboxkrnl.exe exports).

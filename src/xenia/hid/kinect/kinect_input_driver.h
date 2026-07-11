@@ -6,6 +6,8 @@
  * Released under the BSD license - see LICENSE in the root for more details. *
  ******************************************************************************
  *
+ * Based on the experimental, in-progress Kinect HLE implementation by Weronika Saturday (@weronika-saturday).
+ *
  * Kinect / NUI HID input driver — cross-platform implementation.
  *
  * Platform              Real hardware backend
