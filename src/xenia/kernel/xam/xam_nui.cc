@@ -482,6 +482,116 @@ dword_result_t XamXStudioRequest_entry(dword_t cmd, lpvoid_t p_in_out) {
 }
 DECLARE_XAM_EXPORT2(XamXStudioRequest, kNone, kStub, kHighFrequency);
 
+// --- Camera Elevation & Motor Control ---
+dword_result_t XamNuiCameraRememberFloor_entry() { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraRememberFloor, kNone, kStub);
+
+dword_result_t XamNuiCameraElevationSetAngle_entry(int32_t angle) {
+  if (kd()) { return kd()->NuiCameraSetElevation(angle); }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiCameraElevationSetAngle, kNone, kStub);
+
+dword_result_t XamNuiCameraElevationAutoTilt_entry() { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraElevationAutoTilt, kNone, kStub);
+
+dword_result_t XamNuiCameraElevationStopMovement_entry() { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraElevationStopMovement, kNone, kStub);
+
+dword_result_t XamNuiCameraElevationSetCallback_entry(lpvoid_t callback, lpvoid_t context) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraElevationSetCallback, kNone, kStub);
+
+dword_result_t XamNuiCameraElevationReverseAutoTilt_entry() { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraElevationReverseAutoTilt, kNone, kStub);
+
+dword_result_t XamNuiCameraAdjustTilt_entry(int32_t angle) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraAdjustTilt, kNone, kStub);
+
+dword_result_t XamNuiCameraTiltReportStatus_entry(lpvoid_t status) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiCameraTiltReportStatus, kNone, kStub);
+
+dword_result_t XamNuiNatalCameraUpdateStarting_entry(unknown_t unk) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiNatalCameraUpdateStarting, kNone, kStub);
+
+dword_result_t XamNuiNatalCameraUpdateComplete_entry(unknown_t unk) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiNatalCameraUpdateComplete, kNone, kStub);
+
+// --- Identity & Binding ---
+dword_result_t XamUserNuiBind_entry(dword_t user_index, dword_t tracking_id) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamUserNuiBind, kNone, kStub);
+
+dword_result_t XamUserNuiUnbind_entry(dword_t user_index) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamUserNuiUnbind, kNone, kStub);
+
+dword_result_t XamUserNuiGetEnrollmentIndex_entry(dword_t user_index, lpdword_t index) {
+  if (index) { *index = 0; }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamUserNuiGetEnrollmentIndex, kNone, kStub);
+
+dword_result_t XamNuiIdentityIdentifyWithBiometric_entry(lpvoid_t unk1, lpvoid_t unk2) { return X_E_FAIL; }
+DECLARE_XAM_EXPORT1(XamNuiIdentityIdentifyWithBiometric, kNone, kStub);
+
+// --- Gestures, HUD, & Automation ---
+dword_result_t XamNuiGetSystemGestureControl_entry(lpvoid_t control) { return X_E_FAIL; }
+DECLARE_XAM_EXPORT1(XamNuiGetSystemGestureControl, kNone, kStub);
+
+dword_result_t XamNuiHudInterpretFrame_entry(lpvoid_t frame) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiHudInterpretFrame, kNone, kStub);
+
+dword_result_t XamNuiHudEnableInputFilter_entry(dword_t enable) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiHudEnableInputFilter, kNone, kStub);
+
+dword_result_t ControlpackNuiCursorSetTrackingId_entry(dword_t id) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(ControlpackNuiCursorSetTrackingId, kNone, kStub);
+
+dword_result_t ControlPackSideNavControlGetNuiHandle_entry(lpvoid_t handle) { return X_E_FAIL; }
+DECLARE_XAM_EXPORT1(ControlPackSideNavControlGetNuiHandle, kNone, kStub);
+
+dword_result_t XamEnableNuiAutomation_entry(dword_t enable) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamEnableNuiAutomation, kNone, kStub);
+
+dword_result_t XamEnableNatalPlayback_entry(dword_t enable) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamEnableNatalPlayback, kNone, kStub);
+
+// --- Hardware Details ---
+dword_result_t XamNuiGetDeviceSerialNumber_entry(lpstring_t serial_out, dword_t max_len) {
+  if (serial_out) { serial_out.set_value("KINECTEMULATOR123"); }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiGetDeviceSerialNumber, kNone, kStub);
+
+dword_result_t XamNuiGetLoadedDepthCalibration_entry(lpvoid_t out_calib) { return X_STATUS_NO_SUCH_FILE; }
+DECLARE_XAM_EXPORT1(XamNuiGetLoadedDepthCalibration, kNone, kStub);
+
+dword_result_t XamNuiGetTrueColorInfo_entry(lpvoid_t out_info) { return X_E_FAIL; }
+DECLARE_XAM_EXPORT1(XamNuiGetTrueColorInfo, kNone, kStub);
+
+dword_result_t XamNuiGetCameraIntrinsics_entry(lpvoid_t out_intrinsics) { return X_E_FAIL; }
+DECLARE_XAM_EXPORT1(XamNuiGetCameraIntrinsics, kNone, kStub);
+
+dword_result_t XamNuiGetFanRate_entry(lpdword_t out_rate) {
+  if (out_rate) { *out_rate = 50; } // 50% fan speed
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiGetFanRate, kNone, kStub);
+
+dword_result_t XamNuiGetSupportString_entry(lpstring_t out_str, dword_t max_len) {
+  if (out_str) { out_str.set_value("Kinect Support Stub Active"); }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiGetSupportString, kNone, kStub);
+
+// --- Audio & Misc ---
+dword_result_t XamNatalDeviceAudioCalibrate_entry() { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNatalDeviceAudioCalibrate, kNone, kStub);
+
+dword_result_t XamNuiSetForceDeviceOff_entry(dword_t force_off) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiSetForceDeviceOff, kNone, kStub);
+
+dword_result_t XamNuiSkeletonScoreUpdate_entry(lpvoid_t unk) { return X_ERROR_SUCCESS; }
+DECLARE_XAM_EXPORT1(XamNuiSkeletonScoreUpdate, kNone, kStub);
+
 }  // namespace xam
 }  // namespace kernel
 }  // namespace xe
