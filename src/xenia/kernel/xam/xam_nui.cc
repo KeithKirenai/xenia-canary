@@ -20,7 +20,7 @@
 #include "xenia/xbox.h"
 #include "xenia/hid/kinect/kinect_input_driver.h"
 
-DEFINE_bool(allow_nui_initialization, false,
+DEFINE_bool(allow_nui_initialization, true,
             "Enable NUI initialization\n"
             " Only set true when testing kinect games. Certain games may\n"
             " require avatar implementation.",
