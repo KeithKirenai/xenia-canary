@@ -18,10 +18,21 @@
 #include "xenia/ui/window.h"
 #include "xenia/ui/windowed_app_context.h"
 #include "xenia/xbox.h"
+#include "xenia/hid/kinect/kinect_input_driver.h"
+
+DEFINE_bool(allow_nui_initialization, false,
+            "Enable NUI initialization\n"
+            " Only set true when testing kinect games. Certain games may\n"
+            " require avatar implementation.",
+            "Kernel");
 
 namespace xe {
 namespace kernel {
 namespace xam {
+
+static xe::hid::kinect::KinectInputDriver* kd() {
+  return xe::hid::kinect::KinectInputDriver::instance();
+}
 // https://web.cs.ucdavis.edu/~okreylos/ResDev/Kinect/MainPage.html
 
 struct X_NUI_DEVICE_STATUS {
@@ -63,14 +74,16 @@ dword_result_t XamNuiGetDeviceStatus_entry(
   */
 
   status_ptr.Zero();
-
-  const bool kinect_initialized =
-      kernel_state()->xconfig()->ReadSetting<uint32_t>(
-          X_CONFIG_CATEGORY::XCONFIG_USER_CATEGORY, XCONFIG_USER_RETAIL_FLAGS) &
-      X_RETAIL_FLAGS::KinectInitialized;
-
-  status_ptr->status = kinect_initialized;
-  return kinect_initialized ? X_ERROR_SUCCESS : 0xC0050006;
+  if (!cvars::allow_nui_initialization) {
+    return 0xC0050006;
+  }
+  // Initialize on first call — games poll GetDeviceStatus before anything
+  // else and expect the device to become ready.
+  if (kd() && !kd()->is_initialized()) {
+    kd()->NuiInitialize(0x08);  // NUI_INITIALIZE_FLAG_USES_SKELETON
+  }
+  status_ptr->status = (kd() && kd()->is_initialized()) ? 0x01u : 0x00u;
+  return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiGetDeviceStatus, kNone, kStub);
 
@@ -187,20 +200,8 @@ dword_result_t XamIsNuiUIActive_entry() {
 DECLARE_XAM_EXPORT1(XamIsNuiUIActive, kNone, kImplemented);
 
 dword_result_t XamNuiIsDeviceReady_entry() {
-  /* device_state Notes:
-   - used with XNotifyBroadcast(kXNotificationSystemNUIHardwareStatusChanged,
-   device_state)
-   - known values:
-     - 0x0001
-     - 0x0004
-     - 0x0040
-  */
-  const bool kinect_initialized =
-      kernel_state()->xconfig()->ReadSetting<uint32_t>(
-          X_CONFIG_CATEGORY::XCONFIG_USER_CATEGORY, XCONFIG_USER_RETAIL_FLAGS) &
-      X_RETAIL_FLAGS::KinectInitialized;
-
-  return kinect_initialized >> 1 & 1;
+  if (!cvars::allow_nui_initialization) return 0;
+  return (kd() && kd()->is_initialized()) ? 1u : 0u;
 }
 DECLARE_XAM_EXPORT1(XamNuiIsDeviceReady, kNone, kImplemented);
 
@@ -467,6 +468,19 @@ void XamNuiPlayerEngagementUpdate_entry(qword_t unk1, unknown_t unk2,
   */
 }
 DECLARE_XAM_EXPORT1(XamNuiPlayerEngagementUpdate, kNone, kStub);
+
+dword_result_t XamXStudioRequest_entry(dword_t cmd, lpvoid_t p_in_out) {
+  if (cmd == 6 && p_in_out) {
+    // Report Kinect as NOT present (bit 31 set) so callers that check this
+    // before XamNuiGetDeviceStatus don't spin-wait.
+    auto* out = kernel_state()->memory()->TranslateVirtual<uint32_t*>(
+        p_in_out.guest_address());
+    *out = xe::byte_swap(uint32_t(0x80000000));
+    return X_ERROR_SUCCESS;
+  }
+  return X_E_FAIL;
+}
+DECLARE_XAM_EXPORT2(XamXStudioRequest, kNone, kStub, kHighFrequency);
 
 }  // namespace xam
 }  // namespace kernel

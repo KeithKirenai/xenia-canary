@@ -94,6 +94,7 @@ target_link_libraries(xenia-app PRIVATE
   xenia-debug-ui
   xenia-helper-sdl
   xenia-hid-sdl
+  xenia-hid-kinect
 )
 
 # Architecture-specific backend
