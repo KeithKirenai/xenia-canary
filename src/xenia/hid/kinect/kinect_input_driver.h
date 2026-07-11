@@ -192,6 +192,11 @@ class KinectInputDriver final : public InputDriver {
   void UnloadMediaPipe();
   void PollMediaPipe();
 
+  // ── libfreenect backend ───────────────────────────────────────────────────
+  bool TryLoadLibFreenect();
+  void UnloadLibFreenect();
+  void PollLibFreenect();
+
   // Map a NiTE2 skeleton (raw float[15][3] positions + confidence[15]) into
   // our X_NUI_SKELETON_DATA, filling interpolated joints.
   void MapNiTE2Skeleton(const float positions[][3], const float confidence[],

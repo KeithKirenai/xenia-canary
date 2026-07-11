@@ -25,12 +25,13 @@ namespace xboxkrnl {
 // LDI -- LZX Decompression Interface
 // ---------------------------------------------------------------------------
 
+dword_result_t XamNuiElevationSetAngle_dummy = 0; // Prevent unused compiler warn if any
 dword_result_t LDICreateDecompression_entry(dword_t cb_data_block_max,
                                             lpvoid_t pv_configuration,
                                             lpvoid_t pfn_ma, lpvoid_t pfn_mf,
                                             lpdword_t pcb_src_used,
                                             lpdword_t ph_decompression) {
-  XELOGI("LDICreateDecompression: block_max={}", cb_data_block_max);
+  XELOGI("LDICreateDecompression: block_max={}", cb_data_block_max.value());
   if (ph_decompression) {
     *ph_decompression = 0xDEDE;
   }
@@ -54,7 +55,7 @@ dword_result_t LDIDecompress_entry(dword_t h_decompression, lpvoid_t pb_dst,
   }
 
   if (pcb_src_used) {
-    *pcb_src_used = cb_dst;
+    *pcb_src_used = cb_dst.value();
   }
   return X_ERROR_SUCCESS;
 }

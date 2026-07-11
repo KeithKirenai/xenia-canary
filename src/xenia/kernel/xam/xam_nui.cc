@@ -486,8 +486,8 @@ DECLARE_XAM_EXPORT2(XamXStudioRequest, kNone, kStub, kHighFrequency);
 dword_result_t XamNuiCameraRememberFloor_entry() { return X_ERROR_SUCCESS; }
 DECLARE_XAM_EXPORT1(XamNuiCameraRememberFloor, kNone, kStub);
 
-dword_result_t XamNuiCameraElevationSetAngle_entry(int32_t angle) {
-  if (kd()) { return kd()->NuiCameraSetElevation(angle); }
+dword_result_t XamNuiCameraElevationSetAngle_entry(dword_t angle) {
+  if (kd()) { return kd()->NuiCameraSetElevation(static_cast<int32_t>(angle)); }
   return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiCameraElevationSetAngle, kNone, kStub);
@@ -504,7 +504,7 @@ DECLARE_XAM_EXPORT1(XamNuiCameraElevationSetCallback, kNone, kStub);
 dword_result_t XamNuiCameraElevationReverseAutoTilt_entry() { return X_ERROR_SUCCESS; }
 DECLARE_XAM_EXPORT1(XamNuiCameraElevationReverseAutoTilt, kNone, kStub);
 
-dword_result_t XamNuiCameraAdjustTilt_entry(int32_t angle) { return X_ERROR_SUCCESS; }
+dword_result_t XamNuiCameraAdjustTilt_entry(dword_t angle) { return X_ERROR_SUCCESS; }
 DECLARE_XAM_EXPORT1(XamNuiCameraAdjustTilt, kNone, kStub);
 
 dword_result_t XamNuiCameraTiltReportStatus_entry(lpvoid_t status) { return X_ERROR_SUCCESS; }
@@ -556,7 +556,7 @@ DECLARE_XAM_EXPORT1(XamEnableNatalPlayback, kNone, kStub);
 
 // --- Hardware Details ---
 dword_result_t XamNuiGetDeviceSerialNumber_entry(lpstring_t serial_out, dword_t max_len) {
-  if (serial_out) { serial_out.set_value("KINECTEMULATOR123"); }
+  if (serial_out) { std::strncpy(serial_out, "KINECTEMULATOR123", max_len); }
   return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiGetDeviceSerialNumber, kNone, kStub);
@@ -577,7 +577,7 @@ dword_result_t XamNuiGetFanRate_entry(lpdword_t out_rate) {
 DECLARE_XAM_EXPORT1(XamNuiGetFanRate, kNone, kStub);
 
 dword_result_t XamNuiGetSupportString_entry(lpstring_t out_str, dword_t max_len) {
-  if (out_str) { out_str.set_value("Kinect Support Stub Active"); }
+  if (out_str) { std::strncpy(out_str, "Kinect Support Stub Active", max_len); }
   return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiGetSupportString, kNone, kStub);
