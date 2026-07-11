@@ -82,7 +82,10 @@ dword_result_t XamNuiGetDeviceStatus_entry(
   if (kd() && !kd()->is_initialized()) {
     kd()->NuiInitialize(0x08);  // NUI_INITIALIZE_FLAG_USES_SKELETON
   }
-  status_ptr->status = (kd() && kd()->is_initialized()) ? 0x01u : 0x00u;
+  if (kd() && kd()->is_initialized()) {
+    // status = 0x45 means device ready + sensor connected + motor connected
+    status_ptr->status = 0x45u;
+  }
   return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiGetDeviceStatus, kNone, kStub);
@@ -433,11 +436,16 @@ DECLARE_XAM_EXPORT1(XamNuiPlayerEngagementUpdate, kNone, kStub);
 
 dword_result_t XamXStudioRequest_entry(dword_t cmd, lpvoid_t p_in_out) {
   if (cmd == 6 && p_in_out) {
-    // Report Kinect as NOT present (bit 31 set) so callers that check this
-    // before XamNuiGetDeviceStatus don't spin-wait.
     auto* out = kernel_state()->memory()->TranslateVirtual<uint32_t*>(
         p_in_out.guest_address());
-    *out = xe::byte_swap(uint32_t(0x80000000));
+    if (cvars::allow_nui_initialization) {
+      // Report Kinect as present (no error bits).
+      *out = 0;
+    } else {
+      // Report Kinect as NOT present (bit 31 set) so callers that check this
+      // before XamNuiGetDeviceStatus don't spin-wait.
+      *out = xe::byte_swap(uint32_t(0x80000000));
+    }
     return X_ERROR_SUCCESS;
   }
   return X_E_FAIL;
