@@ -384,10 +384,9 @@ dword_result_t NtQueryVolumeInformationFile_entry(
     case XFileFsDeviceInformation: {
       auto info = info_ptr.as<X_FILE_FS_DEVICE_INFORMATION*>();
       auto file_device = file->device();
-      XELOGW("Stub XFileFsDeviceInformation!");
-      info->device_type =
-          FILE_DEVICE_UNKNOWN;  // 415608D8 checks for FILE_DEVICE_EHSTOR;
-      info->characteristics = 0;
+      info->device_type = FILE_DEVICE_EHSTOR;
+      info->characteristics = FILE_DEVICE_IS_MOUNTED | FILE_VIRTUAL_VOLUME |
+                              FILE_CHARACTERISTIC_PNP_DEVICE;
       out_length = sizeof(X_FILE_FS_DEVICE_INFORMATION);
       break;
     }

@@ -124,9 +124,50 @@ DECLARE_XAM_EXPORT1(XamNuiGetDepthCalibration, kNone, kStub);
 
 // Skeleton
 qword_result_t XamNuiSkeletonGetBestSkeletonIndex_entry(int_t unk) {
+  if (cvars::allow_nui_initialization && kd() && kd()->is_initialized()) {
+    return 0;
+  }
   return 0xffffffffffffffff;
 }
 DECLARE_XAM_EXPORT1(XamNuiSkeletonGetBestSkeletonIndex, kNone, kStub);
+
+dword_result_t XamNuiEnableChatMic_entry(dword_t enable) {
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiEnableChatMic, kNone, kStub);
+
+dword_result_t XamNuiStoreDepthCalibration_entry(lpvoid_t unk1, dword_t unk2) {
+  return X_STATUS_NO_SUCH_FILE;
+}
+DECLARE_XAM_EXPORT1(XamNuiStoreDepthCalibration, kNone, kStub);
+
+dword_result_t XamUserNuiIsBiometricEnabled_entry(dword_t user_index) {
+  return X_E_FAIL;
+}
+DECLARE_XAM_EXPORT1(XamUserNuiIsBiometricEnabled, kNone, kStub);
+
+dword_result_t XamNuiIdentityGetQualityFlagsMessage_entry(lpvoid_t unk1, dword_t unk2) {
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiIdentityGetQualityFlagsMessage, kNone, kStub);
+
+dword_result_t XamNuiCameraTiltSetCallback_entry(lpvoid_t callback, lpvoid_t context) {
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiCameraTiltSetCallback, kNone, kStub);
+
+dword_result_t XamNuiIdentityGetQualityFlags_entry(dword_t unk1, lpdword_t out_flags) {
+  if (out_flags) {
+    *out_flags = 0;
+  }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamNuiIdentityGetQualityFlags, kNone, kStub);
+
+dword_result_t XamNuiHudGetEngagedEnrollmentIndex_entry(unknown_t unk) {
+  return 0;
+}
+DECLARE_XAM_EXPORT1(XamNuiHudGetEngagedEnrollmentIndex, kNone, kStub);
 
 /* XamNuiCamera Notes
    - most require message calls to xam in 0x0002Bxxx area

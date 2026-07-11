@@ -770,6 +770,44 @@ dword_result_t IoDismountVolumeByFileHandle_entry(dword_t file_handle) {
 }
 DECLARE_XBOXKRNL_EXPORT1(IoDismountVolumeByFileHandle, kFileSystem, kStub);
 
+dword_result_t IoCompleteRequest_entry(dword_t irp, dword_t priority_boost,
+                                       dword_t status) {
+  if (irp) {
+    XELOGD("IoCompleteRequest(irp={:08X}, status={:08X})", irp.value(),
+           status.value());
+  }
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoCompleteRequest, kFileSystem, kStub);
+
+dword_result_t IoCheckShareAccess_entry(dword_t desired_access,
+                                        dword_t desired_share_access,
+                                        dword_t file_object,
+                                        dword_t share_access,
+                                        dword_t create_options) {
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoCheckShareAccess, kFileSystem, kStub);
+
+dword_result_t IoSetShareAccess_entry(dword_t desired_access,
+                                      dword_t desired_share_access,
+                                      dword_t file_object,
+                                      dword_t share_access) {
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoSetShareAccess, kFileSystem, kStub);
+
+dword_result_t IoRemoveShareAccess_entry(dword_t file_object) {
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoRemoveShareAccess, kFileSystem, kStub);
+
+dword_result_t IoInvalidDeviceRequest_entry(dword_t device_object,
+                                             dword_t irp) {
+  return X_STATUS_INVALID_DEVICE_REQUEST;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoInvalidDeviceRequest, kFileSystem, kStub);
+
 }  // namespace xboxkrnl
 }  // namespace kernel
 }  // namespace xe

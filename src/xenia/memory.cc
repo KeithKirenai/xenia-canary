@@ -26,7 +26,10 @@
 // TODO(benvanik): move xbox.h out
 #include "xenia/xbox.h"
 
-DEFINE_bool(protect_zero, true, "Protect the zero page from reads and writes.",
+DEFINE_bool(protect_zero, false,
+            "Protect the zero page from reads and writes. Disabled by default "
+            "to avoid breaking titles that access the zero page during "
+            "initialization.",
             "Memory");
 DEFINE_bool(emit_inline_mmio_checks, false,
             "Emit inline MMIO range checks for all I32 loads/stores instead "

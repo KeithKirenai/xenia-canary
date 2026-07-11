@@ -9,6 +9,7 @@
 
 #include "xenia/cpu/backend/x64/x64_function.h"
 
+#include "xenia/base/logging.h"
 #include "xenia/cpu/backend/x64/x64_backend.h"
 #include "xenia/cpu/processor.h"
 #include "xenia/cpu/thread_state.h"
@@ -31,11 +32,27 @@ void X64Function::Setup(uint8_t* machine_code, size_t machine_code_length) {
 }
 
 bool X64Function::CallImpl(ThreadState* thread_state, uint32_t return_address) {
+  if (!thread_state || !thread_state->context()) {
+    XELOGE("X64Function::CallImpl called with invalid thread_state/context");
+    return false;
+  }
+  auto context = thread_state->context();
+  if (!context->virtual_membase) {
+    XELOGE("X64Function::CallImpl invalid virtual_membase for thread {:08X}",
+           thread_state->GetThreadID());
+    return false;
+  }
   auto backend =
       reinterpret_cast<X64Backend*>(thread_state->processor()->backend());
   auto thunk = backend->host_to_guest_thunk();
-  thunk(machine_code_, thread_state->context(),
-        reinterpret_cast<void*>(uintptr_t(return_address)));
+  if (!thunk || !machine_code_) {
+    XELOGE("X64Function::CallImpl invalid thunk/machine_code target={:08X}"
+           " thunk={:p} machine={:p}",
+           address(), reinterpret_cast<void*>(thunk),
+           reinterpret_cast<void*>(machine_code_));
+    return false;
+  }
+  thunk(machine_code_, context, reinterpret_cast<void*>(uintptr_t(return_address)));
   return true;
 }
 

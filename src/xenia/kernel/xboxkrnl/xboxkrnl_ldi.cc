@@ -79,6 +79,18 @@ dword_result_t PsCamDeviceRequest_entry(
   if (bytes_returned) {
     *bytes_returned = 0;
   }
+  if (output_buffer && output_length) {
+    auto* dst = kernel_state()->memory()->TranslateVirtual(output_buffer.guest_address());
+    if (dst) {
+      std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
+      if (output_length.value() >= 4) {
+        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        if (bytes_returned) {
+          *bytes_returned = 4;
+        }
+      }
+    }
+  }
   return X_STATUS_SUCCESS;
 }
 DECLARE_XBOXKRNL_EXPORT1(PsCamDeviceRequest, kNone, kStub);
@@ -89,6 +101,18 @@ dword_result_t McaDeviceRequest_entry(
   if (bytes_returned) {
     *bytes_returned = 0;
   }
+  if (output_buffer && output_length) {
+    auto* dst = kernel_state()->memory()->TranslateVirtual(output_buffer.guest_address());
+    if (dst) {
+      std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
+      if (output_length.value() >= 4) {
+        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        if (bytes_returned) {
+          *bytes_returned = 4;
+        }
+      }
+    }
+  }
   return X_STATUS_SUCCESS;
 }
 DECLARE_XBOXKRNL_EXPORT1(McaDeviceRequest, kNone, kStub);
@@ -98,6 +122,18 @@ dword_result_t DetroitDeviceRequest_entry(
     lpvoid_t output_buffer, dword_t output_length, lpdword_t bytes_returned) {
   if (bytes_returned) {
     *bytes_returned = 0;
+  }
+  if (output_buffer && output_length) {
+    auto* dst = kernel_state()->memory()->TranslateVirtual(output_buffer.guest_address());
+    if (dst) {
+      std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
+      if (output_length.value() >= 4) {
+        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        if (bytes_returned) {
+          *bytes_returned = 4;
+        }
+      }
+    }
   }
   return X_STATUS_SUCCESS;
 }
