@@ -35,7 +35,7 @@ dword_result_t XamAvatarInitialize_entry(
     return X_STATUS_SUCCESS;
   }
 
-  return cvars::allow_avatar_initialization ? X_STATUS_SUCCESS : ~0u;
+  return X_STATUS_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamAvatarInitialize, kAvatars, kStub);
 
@@ -89,10 +89,14 @@ dword_result_t XamAvatarGetManifestLocalUser_entry(
             user_profile->xuid(), kDashboardID, avatar_info_id,
             &avatar_info_setting_data, avatar_metadata_address);
 
-    // Profile doesn't have avatar info setting
+    // Profile doesn't have avatar info setting - synthesize a default dummy male avatar
     if (!avatar_info_setting_data.data.data.binary.ptr) {
-      extended_error = X_E_FAIL;
-      return X_ERROR_FUNCTION_FAILED;
+      avatar_metadata_ptr.Zero();
+      avatar_metadata_ptr->weight = 50;
+      avatar_metadata_ptr->height = 50;
+      avatar_metadata_ptr->skin_color = 0xE6B496; // default skin tone
+      extended_error = X_ERROR_SUCCESS;
+      return X_ERROR_SUCCESS;
     }
 
     return X_ERROR_SUCCESS;

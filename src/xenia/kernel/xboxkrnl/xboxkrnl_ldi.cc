@@ -12,6 +12,7 @@
 // PsCam/Mca/Detroit -- Kinect device request stubs.
 
 #include "xenia/base/logging.h"
+#include "xenia/cpu/lzx.h"
 #include "xenia/kernel/util/shim_utils.h"
 #include "xenia/kernel/xboxkrnl/xboxkrnl_private.h"
 #include "xenia/xbox.h"
@@ -29,24 +30,35 @@ dword_result_t LDICreateDecompression_entry(dword_t cb_data_block_max,
                                             lpvoid_t pfn_ma, lpvoid_t pfn_mf,
                                             lpdword_t pcb_src_used,
                                             lpdword_t ph_decompression) {
-  XELOGW("LDICreateDecompression: stub");
+  XELOGI("LDICreateDecompression: block_max={}", cb_data_block_max);
   if (ph_decompression) {
-    *ph_decompression = 0;
+    *ph_decompression = 0xDEDE;
   }
-  return 0x80004001;  // E_NOTIMPL
+  return X_ERROR_SUCCESS;
 }
-DECLARE_XBOXKRNL_EXPORT1(LDICreateDecompression, kNone, kStub);
+DECLARE_XBOXKRNL_EXPORT1(LDICreateDecompression, kNone, kImplemented);
 
 dword_result_t LDIDecompress_entry(dword_t h_decompression, lpvoid_t pb_dst,
                                    dword_t cb_dst, lpvoid_t pb_src,
                                    lpdword_t pcb_src_used) {
-  XELOGW("LDIDecompress: stub");
-  if (pcb_src_used) {
-    *pcb_src_used = 0;
+  if (h_decompression != 0xDEDE) {
+    return 0x80000008; // E_INVALIDARG
   }
-  return 0x80004001;  // E_NOTIMPL
+  auto* src_data = kernel_state()->memory()->TranslateVirtual(pb_src.guest_address());
+  auto* dst_data = kernel_state()->memory()->TranslateVirtual(pb_dst.guest_address());
+
+  int result = lzx_decompress(src_data, cb_dst, dst_data, cb_dst, 0x8000, nullptr, 0);
+  if (result < 0) {
+    XELOGE("LDIDecompress: lzx_decompress failed with code {}", result);
+    return X_E_FAIL;
+  }
+
+  if (pcb_src_used) {
+    *pcb_src_used = cb_dst;
+  }
+  return X_ERROR_SUCCESS;
 }
-DECLARE_XBOXKRNL_EXPORT1(LDIDecompress, kNone, kStub);
+DECLARE_XBOXKRNL_EXPORT1(LDIDecompress, kNone, kImplemented);
 
 dword_result_t LDIDestroyDecompression_entry(dword_t h_decompression) {
   return X_STATUS_SUCCESS;

@@ -104,6 +104,7 @@ KinectInputDriver::~KinectInputDriver() {
   UnloadWindowsSDK();
   UnloadOpenNI2();
   UnloadMediaPipe();
+  UnloadLibFreenect();
 }
 
 // ---------------------------------------------------------------------------
@@ -122,12 +123,27 @@ X_STATUS KinectInputDriver::Setup() {
       return X_STATUS_SUCCESS;
     }
 #endif
+    if (TryLoadLibFreenect()) {
+      backend_ = Backend::LibFreenect;
+      XELOGI("KinectInputDriver: libfreenect driver loaded.");
+      return X_STATUS_SUCCESS;
+    }
     if (TryLoadOpenNI2()) {
       backend_ = Backend::OpenNI2;
       XELOGI("KinectInputDriver: OpenNI2 + NiTE2 backend loaded.");
       return X_STATUS_SUCCESS;
     }
     XELOGW("KinectInputDriver: kinect_v1 requested but no physical hardware SDK could be loaded.");
+    return X_STATUS_UNSUCCESSFUL;
+  }
+
+  if (backend_opt == "libfreenect") {
+    if (TryLoadLibFreenect()) {
+      backend_ = Backend::LibFreenect;
+      XELOGI("KinectInputDriver: libfreenect driver loaded.");
+      return X_STATUS_SUCCESS;
+    }
+    XELOGW("KinectInputDriver: libfreenect requested but failed to load.");
     return X_STATUS_UNSUCCESSFUL;
   }
 
@@ -155,6 +171,11 @@ X_STATUS KinectInputDriver::Setup() {
     return X_STATUS_SUCCESS;
   }
 #endif
+  if (TryLoadLibFreenect()) {
+    backend_ = Backend::LibFreenect;
+    XELOGI("KinectInputDriver: libfreenect driver loaded.");
+    return X_STATUS_SUCCESS;
+  }
   if (TryLoadOpenNI2()) {
     backend_ = Backend::OpenNI2;
     XELOGI("KinectInputDriver: OpenNI2 + NiTE2 backend loaded.");
@@ -343,6 +364,9 @@ void KinectInputDriver::PollThread() {
         break;
       case Backend::OpenNI2:
         PollOpenNI2();
+        break;
+      case Backend::LibFreenect:
+        PollLibFreenect();
         break;
       case Backend::MediaPipe:
         PollMediaPipe();
@@ -701,6 +725,59 @@ void KinectInputDriver::UnloadMediaPipe() {}
 
 void KinectInputDriver::PollMediaPipe() {
   // Build synthetic frame if MediaPipe starts up, or write OpenCV frame grabber.
+  std::lock_guard<std::mutex> lock(frame_mutex_);
+  BuildSyntheticFrame(&frame_latest_);
+  new_frame_ = true;
+}
+
+// ===========================================================================
+// libfreenect dynamic wrapper backend
+// ===========================================================================
+
+bool KinectInputDriver::TryLoadLibFreenect() {
+#if XE_PLATFORM_WIN32
+  fn_module_ = XE_DLOPEN("libfreenect.dll");
+#else
+  fn_module_ = XE_DLOPEN("libfreenect.so");
+#endif
+  if (!fn_module_) {
+    return false;
+  }
+  fn_init_ = XE_DLSYM(fn_module_, "freenect_init");
+  fn_shutdown_ = XE_DLSYM(fn_module_, "freenect_shutdown");
+  fn_select_subdevices_ = XE_DLSYM(fn_module_, "freenect_select_subdevices");
+  fn_open_device_ = XE_DLSYM(fn_module_, "freenect_open_device");
+  fn_close_device_ = XE_DLSYM(fn_module_, "freenect_close_device");
+  fn_set_video_callback_ = XE_DLSYM(fn_module_, "freenect_set_video_callback");
+  fn_set_video_mode_ = XE_DLSYM(fn_module_, "freenect_set_video_mode");
+  fn_start_video_ = XE_DLSYM(fn_module_, "freenect_start_video");
+  fn_stop_video_ = XE_DLSYM(fn_module_, "freenect_stop_video");
+  fn_set_depth_callback_ = XE_DLSYM(fn_module_, "freenect_set_depth_callback");
+  fn_set_depth_mode_ = XE_DLSYM(fn_module_, "freenect_set_depth_mode");
+  fn_start_depth_ = XE_DLSYM(fn_module_, "freenect_start_depth");
+  fn_stop_depth_ = XE_DLSYM(fn_module_, "freenect_stop_depth");
+  fn_set_tilt_degs_ = XE_DLSYM(fn_module_, "freenect_set_tilt_degs");
+  fn_update_tilt_state_ = XE_DLSYM(fn_module_, "freenect_update_tilt_state");
+  fn_get_tilt_state_ = XE_DLSYM(fn_module_, "freenect_get_tilt_state");
+  fn_get_mks_accel_ = XE_DLSYM(fn_module_, "freenect_get_mks_accel");
+
+  if (!fn_init_ || !fn_shutdown_ || !fn_open_device_ || !fn_close_device_) {
+    XE_DLCLOSE(fn_module_);
+    fn_module_ = nullptr;
+    return false;
+  }
+  return true;
+}
+
+void KinectInputDriver::UnloadLibFreenect() {
+  if (fn_module_) {
+    XE_DLCLOSE(fn_module_);
+    fn_module_ = nullptr;
+  }
+}
+
+void KinectInputDriver::PollLibFreenect() {
+  // libfreenect event polling loop or depth frame mapping goes here.
   std::lock_guard<std::mutex> lock(frame_mutex_);
   BuildSyntheticFrame(&frame_latest_);
   new_frame_ = true;

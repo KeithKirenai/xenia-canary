@@ -212,7 +212,8 @@ class KinectInputDriver final : public InputDriver {
     Synthetic,
     WindowsSDK,
     OpenNI2,
-    MediaPipe
+    MediaPipe,
+    LibFreenect
   } backend_{Backend::None};
 
   // Windows SDK function pointers (void* to avoid including NuiApi.h).
@@ -242,6 +243,28 @@ class KinectInputDriver final : public InputDriver {
   void* pfn_niteUserTrackerDestroy_{nullptr};
   void* pfn_niteUserTrackerReadFrame_{nullptr};
   void* pfn_niteUserTrackerFrameRelease_{nullptr};
+
+  // libfreenect handles and function pointers.
+  void* fn_module_{nullptr};  // libfreenect.dll / libfreenect.so
+  void* fn_ctx_{nullptr};     // freenect_context*
+  void* fn_dev_{nullptr};     // freenect_device*
+  void* fn_init_{nullptr};
+  void* fn_shutdown_{nullptr};
+  void* fn_select_subdevices_{nullptr};
+  void* fn_open_device_{nullptr};
+  void* fn_close_device_{nullptr};
+  void* fn_set_video_callback_{nullptr};
+  void* fn_set_video_mode_{nullptr};
+  void* fn_start_video_{nullptr};
+  void* fn_stop_video_{nullptr};
+  void* fn_set_depth_callback_{nullptr};
+  void* fn_set_depth_mode_{nullptr};
+  void* fn_start_depth_{nullptr};
+  void* fn_stop_depth_{nullptr};
+  void* fn_set_tilt_degs_{nullptr};
+  void* fn_update_tilt_state_{nullptr};
+  void* fn_get_tilt_state_{nullptr};
+  void* fn_get_mks_accel_{nullptr};
 
   static KinectInputDriver* instance_;
 };
