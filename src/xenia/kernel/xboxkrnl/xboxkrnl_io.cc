@@ -1,4 +1,4 @@
-﻿/**
+/**
  ******************************************************************************
  * Xenia : Xbox 360 Emulator Research Project                                 *
  ******************************************************************************
@@ -758,7 +758,17 @@ void IoDeleteDevice_entry(dword_t device_ptr, const ppc_context_t& ctx) {
   }
 }
 
-DECLARE_XBOXKRNL_EXPORT1(IoDeleteDevice, kFileSystem, kStub);
+dword_result_t IoDismountVolume_entry(dword_t device_object) {
+  XELOGD("IoDismountVolume({:08X})", device_object.value());
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoDismountVolume, kFileSystem, kStub);
+
+dword_result_t IoDismountVolumeByFileHandle_entry(dword_t file_handle) {
+  XELOGD("IoDismountVolumeByFileHandle({:08X})", file_handle.value());
+  return X_STATUS_SUCCESS;
+}
+DECLARE_XBOXKRNL_EXPORT1(IoDismountVolumeByFileHandle, kFileSystem, kStub);
 
 }  // namespace xboxkrnl
 }  // namespace kernel
