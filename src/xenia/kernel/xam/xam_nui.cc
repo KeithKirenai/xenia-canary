@@ -88,7 +88,8 @@ dword_result_t XamNuiGetDeviceStatus_entry(
 DECLARE_XAM_EXPORT1(XamNuiGetDeviceStatus, kNone, kStub);
 
 dword_result_t XamUserNuiGetUserIndex_entry(unknown_t unk, lpdword_t index) {
-  return X_E_NO_SUCH_USER;
+  if (index) { *index = 0; }
+  return X_E_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamUserNuiGetUserIndex, kNone, kStub);
 
@@ -129,14 +130,10 @@ DECLARE_XAM_EXPORT1(XamNuiSkeletonGetBestSkeletonIndex, kNone, kStub);
 */
 
 dword_result_t XamNuiCameraTiltGetStatus_entry(lpvoid_t unk) {
-  /* Notes:
-     - Used by XamNuiCameraElevationGetAngle, and XamNuiCameraSetFlags
-     - if it returns anything greater than -1 then both above functions continue
-     - Both funcs send in a param of *unk = 0x50 bytes to copy
-     - unk2
-     - Ghidra decompile fails
-  */
-  return X_E_FAIL;
+  if (unk) {
+    std::memset(kernel_memory()->TranslateVirtual(unk.guest_address()), 0, 0x50);
+  }
+  return X_ERROR_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamNuiCameraTiltGetStatus, kNone, kStub);
 
@@ -157,20 +154,7 @@ dword_result_t XamNuiCameraElevationGetAngle_entry(lpqword_t unk1,
 DECLARE_XAM_EXPORT1(XamNuiCameraElevationGetAngle, kNone, kStub);
 
 dword_result_t XamNuiCameraGetTiltControllerType_entry() {
-  /* Notes:
-     - undefined unk[8]
-     - undefined8 local_28;
-     - undefined8 local_20;
-     - undefined8 local_18;
-     - undefined4 local_10;
-     - local_20 = 0;
-     - local_18 = 0;
-     - local_10 = 0;
-     - local_28 = 0xf030000000000;
-     - calls DetroitDeviceRequest(unk) -> result
-     - returns (ulonglong)(LZCOUNT(result) << 0x20) >> 0x25
-  */
-  return X_E_FAIL;
+  return 1; // 1 = Motor tilt controller connected
 }
 DECLARE_XAM_EXPORT1(XamNuiCameraGetTiltControllerType, kNone, kStub);
 
@@ -253,40 +237,18 @@ uint32_t engaged_tracking_id = 0;
 char nui_unknown_2 = '\0';
 
 dword_result_t XamNuiHudSetEngagedTrackingID_entry(dword_t id) {
-  if (!id) {
-    return X_STATUS_SUCCESS;
-  }
-
-  if (nui_unknown_1 != 0) {
-    engaged_tracking_id = id;
-    return X_STATUS_SUCCESS;
-  }
-
-  return X_E_FAIL;
-}
-DECLARE_XAM_EXPORT1(XamNuiHudSetEngagedTrackingID, kNone, kImplemented);
-
-qword_result_t XamNuiHudGetEngagedTrackingID_entry() {
-  if (nui_unknown_1 != 0) {
-    return engaged_tracking_id;
-  }
-
+  engaged_tracking_id = id;
   return X_STATUS_SUCCESS;
 }
+DECLARE_XAM_EXPORT1(XamNuiHudSetEngagedTrackingID, kNone, kImplemented);
+ 
+qword_result_t XamNuiHudGetEngagedTrackingID_entry() {
+  return engaged_tracking_id;
+}
 DECLARE_XAM_EXPORT1(XamNuiHudGetEngagedTrackingID, kNone, kImplemented);
-
+ 
 dword_result_t XamNuiHudIsEnabled_entry() {
-  /* Notes:
-     - checks if XamNuiIsDeviceReady false, if nui_unknown_1 exists, and
-     nui_unknown_2 is equal to null terminated string
-     - only returns true if one check fails and allows for other NUI functions
-     to progress
-  */
-  bool result = XamNuiIsDeviceReady_entry();
-  if (nui_unknown_1 != 0 && nui_unknown_2 != '\0' && result) {
-    return true;
-  }
-  return false;
+  return XamNuiIsDeviceReady_entry();
 }
 DECLARE_XAM_EXPORT1(XamNuiHudIsEnabled, kNone, kImplemented);
 
