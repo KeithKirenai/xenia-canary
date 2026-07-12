@@ -171,6 +171,16 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
              data->deployment_type_ptr.get(), data->overlapped_ptr.get());
       return X_E_SUCCESS;
     }
+    case 0x0002B001: {
+      XELOGD("XamApp: 0x2B001 (Kinect device query)");
+      if (buffer_ptr) {
+        auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+        if (out) {
+          *out = 0;
+        }
+      }
+      return X_E_SUCCESS;
+    }
     case 0x0002B003: {
       // Games used in:
       // 4D5309C9
