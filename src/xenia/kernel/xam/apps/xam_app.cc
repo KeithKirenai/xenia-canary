@@ -176,7 +176,7 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
       if (buffer_ptr) {
         auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
         if (out) {
-          *out = 0;
+          *out = 1;
         }
       }
       return X_E_SUCCESS;
