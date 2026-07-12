@@ -91,25 +91,21 @@ dword_result_t XamNuiGetDeviceStatus_entry(
 DECLARE_XAM_EXPORT1(XamNuiGetDeviceStatus, kNone, kStub);
 
 dword_result_t XamUserNuiGetUserIndex_entry(unknown_t unk, lpdword_t index) {
+  XELOGI("XamUserNuiGetUserIndex called");
   if (index) { *index = 0; }
   return X_E_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamUserNuiGetUserIndex, kNone, kStub);
 
 dword_result_t XamUserNuiGetUserIndexForSignin_entry(lpdword_t index) {
-  for (uint32_t i = 0; i < XUserMaxUserCount; i++) {
-    auto profile = kernel_state()->xam_state()->GetUserProfile(i);
-    if (profile) {
-      *index = i;
-      return X_E_SUCCESS;
-    }
-  }
-
-  return X_E_ACCESS_DENIED;
+  XELOGI("XamUserNuiGetUserIndexForSignin called");
+  if (index) { *index = 0; }
+  return X_E_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamUserNuiGetUserIndexForSignin, kNone, kImplemented);
 
 dword_result_t XamUserNuiGetUserIndexForBind_entry(lpdword_t index) {
+  XELOGI("XamUserNuiGetUserIndexForBind called");
   if (index) { *index = 0; }
   return X_E_SUCCESS;
 }
