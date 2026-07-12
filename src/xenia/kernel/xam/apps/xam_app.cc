@@ -14,6 +14,7 @@
 #include "xenia/kernel/xam/xam_content_device.h"
 #include "xenia/kernel/xenumerator.h"
 #include "xenia/hid/kinect/kinect_input_driver.h"
+#include "xenia/base/memory.h"
 
 static xe::hid::kinect::KinectInputDriver* kd() {
   return xe::hid::kinect::KinectInputDriver::instance();
@@ -180,12 +181,23 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
                  xe::byte_swap(out[2]), xe::byte_swap(out[3]));
           
           uint32_t count_ptr = xe::byte_swap(out[1]);
+          uint32_t hr_ptr = xe::byte_swap(out[2]);
           
           if (count_ptr) {
             auto* count_val = memory_->TranslateVirtual<uint32_t*>(count_ptr);
             if (count_val) {
               xe::store_and_swap<uint32_t>(count_val, 1);
               XELOGI("XamApp: 0x2B001 wrote device count 1 (Big Endian) to guest pointer {:08X}", count_ptr);
+            }
+          }
+          if (hr_ptr) {
+            auto* hr_val = memory_->TranslateVirtual<uint32_t*>(hr_ptr);
+            if (hr_val) {
+              xe::memory::PageAccess old_protect;
+              xe::memory::Protect(hr_val, 4, xe::memory::PageAccess::kReadWrite, &old_protect);
+              xe::store_and_swap<uint32_t>(hr_val, 0); // S_OK
+              xe::memory::Protect(hr_val, 4, old_protect);
+              XELOGI("XamApp: 0x2B001 wrote S_OK (Big Endian) to guest pointer {:08X} (bypassed read-only)", hr_ptr);
             }
           }
         }
