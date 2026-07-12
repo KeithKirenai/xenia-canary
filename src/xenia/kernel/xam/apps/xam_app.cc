@@ -184,8 +184,8 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
           if (count_ptr) {
             auto* count_val = memory_->TranslateVirtual<uint32_t*>(count_ptr);
             if (count_val) {
-              *count_val = 1;
-              XELOGI("XamApp: 0x2B001 wrote device count 1 to guest pointer {:08X}", count_ptr);
+              xe::store_and_swap<uint32_t>(count_val, 1);
+              XELOGI("XamApp: 0x2B001 wrote device count 1 (Big Endian) to guest pointer {:08X}", count_ptr);
             }
           }
         }
