@@ -16,6 +16,7 @@
 #include "xenia/kernel/util/shim_utils.h"
 #include "xenia/kernel/xboxkrnl/xboxkrnl_private.h"
 #include "xenia/xbox.h"
+#include "xenia/base/memory.h"
 
 namespace xe {
 namespace kernel {
@@ -76,6 +77,7 @@ DECLARE_XBOXKRNL_EXPORT1(LDIDestroyDecompression, kNone, kStub);
 dword_result_t PsCamDeviceRequest_entry(
     dword_t request_code, lpvoid_t input_buffer, dword_t input_length,
     lpvoid_t output_buffer, dword_t output_length, lpdword_t bytes_returned) {
+  XELOGI("PsCamDeviceRequest: code={}, in_len={}, out_len={}", request_code.value(), input_length.value(), output_length.value());
   if (bytes_returned) {
     *bytes_returned = 0;
   }
@@ -84,7 +86,7 @@ dword_result_t PsCamDeviceRequest_entry(
     if (dst) {
       std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
       if (output_length.value() >= 4) {
-        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        xe::store_and_swap<uint32_t>(dst, 1);
         if (bytes_returned) {
           *bytes_returned = 4;
         }
@@ -98,6 +100,7 @@ DECLARE_XBOXKRNL_EXPORT1(PsCamDeviceRequest, kNone, kStub);
 dword_result_t McaDeviceRequest_entry(
     dword_t request_code, lpvoid_t input_buffer, dword_t input_length,
     lpvoid_t output_buffer, dword_t output_length, lpdword_t bytes_returned) {
+  XELOGI("McaDeviceRequest: code={}, in_len={}, out_len={}", request_code.value(), input_length.value(), output_length.value());
   if (bytes_returned) {
     *bytes_returned = 0;
   }
@@ -106,7 +109,7 @@ dword_result_t McaDeviceRequest_entry(
     if (dst) {
       std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
       if (output_length.value() >= 4) {
-        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        xe::store_and_swap<uint32_t>(dst, 1);
         if (bytes_returned) {
           *bytes_returned = 4;
         }
@@ -120,6 +123,7 @@ DECLARE_XBOXKRNL_EXPORT1(McaDeviceRequest, kNone, kStub);
 dword_result_t DetroitDeviceRequest_entry(
     dword_t request_code, lpvoid_t input_buffer, dword_t input_length,
     lpvoid_t output_buffer, dword_t output_length, lpdword_t bytes_returned) {
+  XELOGI("DetroitDeviceRequest: code={}, in_len={}, out_len={}", request_code.value(), input_length.value(), output_length.value());
   if (bytes_returned) {
     *bytes_returned = 0;
   }
@@ -128,7 +132,7 @@ dword_result_t DetroitDeviceRequest_entry(
     if (dst) {
       std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
       if (output_length.value() >= 4) {
-        reinterpret_cast<uint32_t*>(dst)[0] = 0x00000001u;
+        xe::store_and_swap<uint32_t>(dst, 1);
         if (bytes_returned) {
           *bytes_returned = 4;
         }
