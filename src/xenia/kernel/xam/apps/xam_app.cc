@@ -178,13 +178,22 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
           XELOGI("XamApp: 0x2B001 raw buffer content: {:08X} {:08X} {:08X} {:08X}",
                  xe::byte_swap(out[0]), xe::byte_swap(out[1]),
                  xe::byte_swap(out[2]), xe::byte_swap(out[3]));
-          // Assume first element is a guest pointer to write the device count
-          uint32_t guest_out_ptr = xe::byte_swap(out[0]);
-          if (guest_out_ptr && guest_out_ptr != 1) {
-            auto* guest_out = memory_->TranslateVirtual<uint32_t*>(guest_out_ptr);
-            if (guest_out) {
-              *guest_out = 1;
-              XELOGI("XamApp: 0x2B001 wrote device count 1 to guest pointer {:08X}", guest_out_ptr);
+          
+          uint32_t count_ptr = xe::byte_swap(out[1]);
+          uint32_t hr_ptr = xe::byte_swap(out[2]);
+          
+          if (count_ptr) {
+            auto* count_val = memory_->TranslateVirtual<uint32_t*>(count_ptr);
+            if (count_val) {
+              *count_val = 1;
+              XELOGI("XamApp: 0x2B001 wrote device count 1 to guest pointer {:08X}", count_ptr);
+            }
+          }
+          if (hr_ptr) {
+            auto* hr_val = memory_->TranslateVirtual<uint32_t*>(hr_ptr);
+            if (hr_val) {
+              *hr_val = 0; // S_OK
+              XELOGI("XamApp: 0x2B001 wrote S_OK to guest pointer {:08X}", hr_ptr);
             }
           }
         }
