@@ -600,6 +600,77 @@ DECLARE_XAM_EXPORT1(XamNuiSetForceDeviceOff, kNone, kStub);
 dword_result_t XamNuiSkeletonScoreUpdate_entry(lpvoid_t unk) { return X_ERROR_SUCCESS; }
 DECLARE_XAM_EXPORT1(XamNuiSkeletonScoreUpdate, kNone, kStub);
 
+// --- Missing NUI Show UI exports (needed by Fruit Ninja Kinect) ---
+dword_result_t XamShowNuiGamerCardUIForXUID_entry(dword_t user_index, qword_t xuid) {
+  XELOGI("XamShowNuiGamerCardUIForXUID(user={}, xuid={:016X}) stub", user_index.value(), xuid.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamShowNuiGamerCardUIForXUID, kNone, kStub);
+
+dword_result_t XamShowNuiAchievementsUI_entry(dword_t user_index) {
+  XELOGI("XamShowNuiAchievementsUI(user={}) stub", user_index.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamShowNuiAchievementsUI, kNone, kStub);
+
+dword_result_t XamShowNuiMarketplaceUI_entry(dword_t user_index, dword_t flags) {
+  XELOGI("XamShowNuiMarketplaceUI(user={}, flags={:08X}) stub", user_index.value(), flags.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamShowNuiMarketplaceUI, kNone, kStub);
+
+dword_result_t XamShowNuiDeviceSelectorUI_entry(dword_t user_index, dword_t content_type,
+                                                 dword_t content_flags, qword_t total_requested,
+                                                 lpdword_t device_id_ptr, lpvoid_t overlapped) {
+  XELOGI("XamShowNuiDeviceSelectorUI(user={}) stub", user_index.value());
+  if (device_id_ptr) { *device_id_ptr = 1; }  // fake device
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamShowNuiDeviceSelectorUI, kNone, kStub);
+
+dword_result_t XamShowNuiDirtyDiscErrorUI_entry(dword_t user_index) {
+  XELOGI("XamShowNuiDirtyDiscErrorUI(user={}) stub", user_index.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamShowNuiDirtyDiscErrorUI, kNone, kStub);
+
+// --- XamCache stubs (Fruit Ninja imports these for NUI identity caching) ---
+dword_result_t XamCacheOpenFile_entry(dword_t flags, lpstring_t path,
+                                       lpdword_t handle_out, lpvoid_t overlapped) {
+  XELOGI("XamCacheOpenFile('{}', flags={:08X}) stub", path ? path.value() : "<null>", flags.value());
+  if (handle_out) { *handle_out = 0xCAFE0001; }  // fake handle
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamCacheOpenFile, kNone, kStub);
+
+dword_result_t XamCacheCloseFile_entry(dword_t handle) {
+  XELOGI("XamCacheCloseFile(handle={:08X}) stub", handle.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamCacheCloseFile, kNone, kStub);
+
+dword_result_t XamCacheReset_entry(dword_t flags) {
+  XELOGI("XamCacheReset(flags={:08X}) stub", flags.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamCacheReset, kNone, kStub);
+
+// --- Biometric data stubs ---
+dword_result_t XamReadBiometricData_entry(dword_t user_index, lpvoid_t buffer, dword_t buffer_size) {
+  XELOGI("XamReadBiometricData(user={}, size={}) stub", user_index.value(), buffer_size.value());
+  if (buffer && buffer_size) {
+    std::memset(kernel_memory()->TranslateVirtual(buffer.guest_address()), 0, buffer_size);
+  }
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamReadBiometricData, kNone, kStub);
+
+dword_result_t XamWriteBiometricData_entry(dword_t user_index, lpvoid_t buffer, dword_t buffer_size) {
+  XELOGI("XamWriteBiometricData(user={}, size={}) stub", user_index.value(), buffer_size.value());
+  return X_ERROR_SUCCESS;
+}
+DECLARE_XAM_EXPORT1(XamWriteBiometricData, kNone, kStub);
+
 }  // namespace xam
 }  // namespace kernel
 }  // namespace xe

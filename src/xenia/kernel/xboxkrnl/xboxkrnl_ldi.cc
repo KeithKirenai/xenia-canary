@@ -75,27 +75,42 @@ DECLARE_XBOXKRNL_EXPORT1(LDIDestroyDecompression, kNone, kStub);
 // ---------------------------------------------------------------------------
 
 dword_result_t PsCamDeviceRequest_entry(
-    dword_t request_code, lpvoid_t input_buffer, dword_t input_length,
-    lpvoid_t output_buffer, dword_t output_length, lpdword_t bytes_returned) {
-  XELOGI("PsCamDeviceRequest: code={}, in_len={}, out_len={}", request_code.value(), input_length.value(), output_length.value());
-  if (bytes_returned) {
-    *bytes_returned = 0;
-  }
-  if (output_buffer && output_length) {
-    auto* dst = kernel_state()->memory()->TranslateVirtual(output_buffer.guest_address());
-    if (dst) {
-      std::memset(dst, 0, std::min<uint32_t>(output_length.value(), 4));
-      if (output_length.value() >= 4) {
-        xe::store_and_swap<uint32_t>(dst, 1);
-        if (bytes_returned) {
-          *bytes_returned = 4;
-        }
+    dword_t arg0, dword_t arg1, dword_t arg2,
+    dword_t arg3, dword_t arg4, dword_t arg5) {
+  XELOGI("PsCamDeviceRequest: arg0={:08X}, arg1={:08X}, arg2={:08X}, arg3={:08X}, arg4={:08X}, arg5={:08X}",
+         arg0.value(), arg1.value(), arg2.value(), arg3.value(), arg4.value(), arg5.value());
+
+  auto* mem = kernel_state()->memory();
+
+  // arg0 = output buffer pointer, arg1 = end pointer (arg0 + size)
+  // Zero the output buffer — don't write fake data that the guest will
+  // dereference as pointers
+  if (arg0.value() >= 0x10000 && arg0.value() < 0xF0000000) {
+    auto* out = mem->TranslateVirtual<uint8_t*>(arg0.value());
+    if (out) {
+      uint32_t buf_size = 0xBD;
+      if (arg1.value() > arg0.value() && (arg1.value() - arg0.value()) < 0x1000) {
+        buf_size = arg1.value() - arg0.value();
       }
+      std::memset(out, 0, buf_size);
+      XELOGI("PsCamDeviceRequest: zeroed output buffer [{:08X}], size={}", arg0.value(), buf_size);
     }
   }
+
+  // arg3 status field — write 0 (S_OK)
+  if (arg3.value() >= 0x10000 && arg3.value() < 0xF0000000) {
+    auto* status = mem->TranslateVirtual<uint32_t*>(arg3.value());
+    if (status) {
+      xe::store_and_swap<uint32_t>(status, 0);
+    }
+  }
+
   return X_STATUS_SUCCESS;
 }
 DECLARE_XBOXKRNL_EXPORT1(PsCamDeviceRequest, kNone, kStub);
+
+
+
 
 dword_result_t McaDeviceRequest_entry(
     dword_t request_code, lpvoid_t input_buffer, dword_t input_length,
