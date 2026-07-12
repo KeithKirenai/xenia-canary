@@ -183,7 +183,7 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
                  xe::byte_swap(out[2]), xe::byte_swap(out[3]));
           
           uint32_t count_ptr = xe::byte_swap(out[1]);
-          uint32_t callback_ptr = xe::byte_swap(out[2]);
+          uint32_t hr_ptr = xe::byte_swap(out[2]);
           
           if (count_ptr) {
             auto* count_val = memory_->TranslateVirtual<uint32_t*>(count_ptr);
@@ -193,14 +193,14 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
             }
           }
           
-          if (callback_ptr) {
-            auto* thread = XThread::GetCurrentThread();
-            if (thread) {
-              auto thread_state = thread->thread_state();
-              uint64_t callback_args[] = { 0, 0, 0 };
-              XELOGI("XamApp: 0x2B001 executing guest status callback at {:08X}...", callback_ptr);
-              kernel_state_->processor()->Execute(thread_state, callback_ptr, callback_args, 3);
-              XELOGI("XamApp: 0x2B001 guest status callback execution completed.");
+          if (hr_ptr) {
+            auto* hr_val = memory_->TranslateVirtual<uint32_t*>(hr_ptr);
+            if (hr_val) {
+              xe::memory::PageAccess old_protect;
+              xe::memory::Protect(hr_val, 4, xe::memory::PageAccess::kReadWrite, &old_protect);
+              xe::store_and_swap<uint32_t>(hr_val, 0); // S_OK
+              xe::memory::Protect(hr_val, 4, old_protect);
+              XELOGI("XamApp: 0x2B001 wrote S_OK (Big Endian) to guest pointer {:08X} (bypassed read-only)", hr_ptr);
             }
           }
         }

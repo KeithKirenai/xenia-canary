@@ -110,7 +110,8 @@ dword_result_t XamUserNuiGetUserIndexForSignin_entry(lpdword_t index) {
 DECLARE_XAM_EXPORT1(XamUserNuiGetUserIndexForSignin, kNone, kImplemented);
 
 dword_result_t XamUserNuiGetUserIndexForBind_entry(lpdword_t index) {
-  return X_E_FAIL;
+  if (index) { *index = 0; }
+  return X_E_SUCCESS;
 }
 DECLARE_XAM_EXPORT1(XamUserNuiGetUserIndexForBind, kNone, kStub);
 

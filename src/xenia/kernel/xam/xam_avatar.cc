@@ -12,7 +12,7 @@
 #include "xenia/kernel/util/shim_utils.h"
 #include "xenia/kernel/xam/xam_private.h"
 
-DEFINE_bool(allow_avatar_initialization, false,
+DEFINE_bool(allow_avatar_initialization, true,
             "Enable Avatar Initialization\n"
             "Only set true when testing Avatar games. Certain games may crash "
             "due to requirement of full avatar implementation.",
