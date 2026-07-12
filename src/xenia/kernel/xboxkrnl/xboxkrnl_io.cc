@@ -647,32 +647,39 @@ dword_result_t NtDeviceIoControlFile_entry(
     dword_t apc_context, pointer_t<X_IO_STATUS_BLOCK> io_status_block,
     dword_t io_control_code, lpvoid_t input_buffer, dword_t input_buffer_len,
     lpvoid_t output_buffer, dword_t output_buffer_len) {
-  // Called by XMountUtilityDrive cache-mounting code
-  // (checks if the returned values look valid, values below seem to pass the
-  // checks)
-  constexpr uint32_t cache_size = 0xFF000;
+  
+  std::string file_path = "unknown";
+  auto file = kernel_state()->object_table()->LookupObject<XFile>(handle);
+  if (file && file->entry()) {
+    file_path = file->entry()->path();
+  }
+  XELOGI("NtDeviceIoControlFile: handle={:08X} ({}), code=0x{:X}, in_len={}, out_len={}",
+         handle.value(), file_path, uint32_t(io_control_code),
+         input_buffer_len.value(), output_buffer_len.value());
 
+  constexpr uint32_t cache_size = 0xFF000;
+ 
   if (io_control_code == X_IOCTL_DISK_GET_DRIVE_GEOMETRY) {
     if (output_buffer_len < 0x8) {
-      assert_always();
       return X_STATUS_BUFFER_TOO_SMALL;
     }
     xe::store_and_swap<uint32_t>(output_buffer, cache_size / 512);
     xe::store_and_swap<uint32_t>(output_buffer + 4, 512);
   } else if (io_control_code == X_IOCTL_DISK_GET_PARTITION_INFO) {
     if (output_buffer_len < 0x10) {
-      assert_always();
       return X_STATUS_BUFFER_TOO_SMALL;
     }
     xe::store_and_swap<uint64_t>(output_buffer, 0);
     xe::store_and_swap<uint64_t>(output_buffer + 8, cache_size);
   } else {
-    XELOGD("NtDeviceIoControlFile(0x{:X}) - unhandled IOCTL!",
-           uint32_t(io_control_code));
-    assert_always();
-    return X_STATUS_INVALID_PARAMETER;
+    XELOGW("NtDeviceIoControlFile(0x{:X}) on {} - returning success stub",
+           uint32_t(io_control_code), file_path);
+    // Write success status 0x1 to output buffer if requested
+    if (output_buffer && output_buffer_len >= 4) {
+      xe::store_and_swap<uint32_t>(output_buffer, 1);
+    }
   }
-
+ 
   return X_STATUS_SUCCESS;
 }
 DECLARE_XBOXKRNL_EXPORT1(NtDeviceIoControlFile, kFileSystem, kStub);
@@ -692,6 +699,15 @@ dword_result_t IoCreateDevice_entry(dword_t driver_object,
                                     dword_t extra_device_object_attributes,
                                     lpdword_t device_object,
                                     const ppc_context_t& ctx) {
+  std::string name_str = "";
+  if (device_name) {
+    auto* str_data = ctx->kernel_state->memory()->TranslateVirtual<const char*>(device_name->pointer);
+    if (str_data) {
+      name_str = std::string(str_data, device_name->length);
+    }
+  }
+  XELOGI("IoCreateDevice: name='{}', type={}, ext_size={}", name_str, device_type.value(), device_extension_size.value());
+  
   // Called from XMountUtilityDrive XAM-task code
   // That code tries writing things to a pointer at out_struct+0x18
   // We'll alloc some scratch space for it so it doesn't cause any exceptions
