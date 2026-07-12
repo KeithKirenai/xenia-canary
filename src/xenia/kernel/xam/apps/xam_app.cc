@@ -185,6 +185,10 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
           uint32_t count_ptr = xe::byte_swap(out[1]);
           uint32_t hr_ptr = xe::byte_swap(out[2]);
           
+          if (kd() && !kd()->is_initialized()) {
+            kd()->NuiInitialize(0x08); // NUI_INITIALIZE_FLAG_USES_SKELETON
+          }
+          
           if (count_ptr) {
             auto* count_val = memory_->TranslateVirtual<uint32_t*>(count_ptr);
             if (count_val) {
