@@ -419,7 +419,7 @@ uint64_t TrapDebugPrint(void* raw_context, uint64_t address) {
   std::memcpy(string_tmp, str, str_length);
   string_tmp[str_length] = 0;
 
-  XELOGD("(DebugPrint) {}", string_tmp);
+  XELOGI("(DebugPrint) {}", string_tmp);
 
   if (cvars::debugprint_trap_log) {
     debugging::DebugPrint("(DebugPrint) {}", string_tmp);

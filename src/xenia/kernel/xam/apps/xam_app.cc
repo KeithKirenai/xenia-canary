@@ -172,7 +172,7 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
       return X_E_SUCCESS;
     }
     case 0x0002B001: {
-      XELOGD("XamApp: 0x2B001 (Kinect device query)");
+      XELOGI("XamApp: 0x2B001 (Kinect device query)");
       if (buffer_ptr) {
         auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
         if (out) {
@@ -190,8 +190,8 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
         xe::be<uint64_t> unk2;
         xe::be<uint64_t> unk3;
       }* args = memory_->TranslateVirtual<decltype(args)>(buffer_ptr);
-
-      XELOGD("XamUnk2B003({:016X}, {:016X}, {:016X}), unimplemented",
+ 
+      XELOGI("XamUnk2B003({:016X}, {:016X}, {:016X}), unimplemented",
              args->unk1.get(), args->unk2.get(), args->unk3.get());
       return X_E_SUCCESS;
     }
@@ -199,18 +199,18 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
       // NUI subsystem startup -- attempt device open.
       auto* driver = kd();
       if (!driver) {
-        XELOGD("XamApp: 0x2B004 no KinectInputDriver");
+        XELOGW("XamApp: 0x2B004 no KinectInputDriver");
         return X_E_FAIL;
       }
       if (!driver->is_initialized()) {
         // NUI_INITIALIZE_FLAG_USES_SKELETON
         X_RESULT result = driver->NuiInitialize(0x08);
         if (result != X_ERROR_SUCCESS) {
-          XELOGD("XamApp: 0x2B004 NuiInitialize failed ({:08X})", result);
+          XELOGE("XamApp: 0x2B004 NuiInitialize failed ({:08X})", result);
           return X_E_FAIL;
         }
       }
-      XELOGD("XamApp: 0x2B004 NUI device ready");
+      XELOGI("XamApp: 0x2B004 NUI device ready");
       return X_E_SUCCESS;
     }
     case 0x0002B005: {
