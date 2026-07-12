@@ -39,8 +39,9 @@
 #include "xenia/cpu/symbol.h"
 #include "xenia/cpu/thread_state.h"
 
-DEFINE_bool(debugprint_trap_log, false,
-            "Log debugprint traps to the active debugger", "CPU");
+DEFINE_bool(debugprint_trap_log, true,
+            "Capture DbgPrint calls from the guest and write to host log.",
+            "CPU");
 DEFINE_bool(ignore_undefined_externs, true,
             "Don't exit when an undefined extern is called.", "CPU");
 DEFINE_bool(emit_source_annotations, false,
