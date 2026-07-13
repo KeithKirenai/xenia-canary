@@ -12,8 +12,10 @@
 #include "xenia/base/clock.h"
 #include "xenia/base/platform.h"
 #include "xenia/cpu/processor.h"
+#include "xenia/hid/kinect/kinect_input_driver.h"
 #include "xenia/kernel/util/shim_utils.h"
 #include "xenia/kernel/xboxkrnl/xboxkrnl_private.h"
+#include "xenia/kernel/xevent.h"
 #include "xenia/kernel/xsemaphore.h"
 #include "xenia/kernel/xtimer.h"
 #include "xenia/xbox.h"
@@ -479,6 +481,11 @@ dword_result_t KeDelayExecutionThread_entry(dword_t processor_mode,
                                             lpqword_t interval_ptr,
                                             const ppc_context_t& context) {
   uint64_t interval = interval_ptr ? static_cast<uint64_t>(*interval_ptr) : 0u;
+  if (interval != 0) {
+    auto thread = XThread::GetCurrentThread();
+    XELOGI("KeDelayExecutionThread: tid={:08X} interval={}",
+           thread ? thread->thread_id() : 0, interval);
+  }
   return KeDelayExecutionThread(processor_mode, alertable,
                                 interval_ptr ? &interval : nullptr, context);
 }
@@ -990,6 +997,31 @@ uint32_t xeKeWaitForSingleObject(void* object_ptr, uint32_t wait_reason,
     return X_STATUS_ABANDONED_WAIT_0;
   }
 
+  // Detect infinite-timeout waits on XEvent objects from NUI-related threads.
+  // If the game is waiting on an event with an infinite timeout, it's likely
+  // the skeleton frame event. Register it with KinectInputDriver so PollThread
+  // can signal it when new skeleton data is available.
+  bool is_infinite_wait = !timeout_ptr || *timeout_ptr == 0x7FFFFFFFFFFFFFFFULL ||
+                          *timeout_ptr == 0xFFFFFFFFFFFFFFFFULL;
+  if (is_infinite_wait && object->type() == XObject::Type::Event) {
+    auto* xevent = reinterpret_cast<XEvent*>(object.get());
+    auto* driver = xe::hid::kinect::KinectInputDriver::instance();
+    if (driver && driver->is_initialized()) {
+      driver->SetSkeletonFrameEvent(xevent);
+      XELOGI("xeKeWaitForSingleObject: registered NUI event handle={:08X}",
+             static_cast<uint32_t>(object->handle()));
+    }
+  }
+
+  if (timeout_ptr == nullptr || *timeout_ptr != 0) {
+    auto thread = XThread::GetCurrentThread();
+    XELOGI("xeKeWaitForSingleObject: tid={:08X} obj={:08X} (type={}) timeout={}",
+           thread ? thread->thread_id() : 0,
+           static_cast<uint32_t>(object->handle()),
+           (int)object->type(),
+           timeout_ptr ? *timeout_ptr : 0xFFFFFFFFFFFFFFFFull);
+  }
+
   X_STATUS result =
       object->Wait(wait_reason, processor_mode, alertable, timeout_ptr);
   if (alertable) {
@@ -1006,6 +1038,10 @@ dword_result_t KeWaitForSingleObject_entry(lpvoid_t object_ptr,
                                            dword_t alertable,
                                            lpqword_t timeout_ptr) {
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
+  auto thread = XThread::GetCurrentThread();
+  XELOGI("KeWaitForSingleObject: tid={:08X} obj={:08X} timeout={}",
+         thread ? thread->thread_id() : 0,
+         static_cast<uint32_t>(object_ptr), timeout);
   return xeKeWaitForSingleObject(object_ptr, wait_reason, processor_mode,
                                  alertable, timeout_ptr ? &timeout : nullptr);
 }
@@ -1039,6 +1075,10 @@ dword_result_t NtWaitForSingleObjectEx_entry(dword_t object_handle,
                                              dword_t alertable,
                                              lpqword_t timeout_ptr) {
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
+  auto thread = XThread::GetCurrentThread();
+  XELOGI("NtWaitForSingleObjectEx: tid={:08X} handle={:08X} timeout={}",
+         thread ? thread->thread_id() : 0,
+         static_cast<uint32_t>(object_handle), timeout);
   return NtWaitForSingleObjectEx(object_handle, wait_mode, alertable,
                                  timeout_ptr ? &timeout : nullptr);
 }
@@ -1067,6 +1107,12 @@ dword_result_t KeWaitForMultipleObjects_entry(
     }
   }
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
+  if (timeout_ptr == nullptr || timeout != 0) {
+    auto thread = XThread::GetCurrentThread();
+    uint32_t cnt = count, type = wait_type;
+    XELOGI("KeWaitForMultipleObjects: tid={:08X} cnt={} type={} timeout={}",
+           thread ? thread->thread_id() : 0, cnt, type, timeout);
+  }
   X_STATUS result = XObject::WaitMultiple(
       uint32_t(count), reinterpret_cast<XObject**>(&objects[0]), wait_type,
       wait_reason, processor_mode, alertable, timeout_ptr ? &timeout : nullptr);
@@ -1126,6 +1172,12 @@ dword_result_t NtWaitForMultipleObjectsEx_entry(
     dword_t count, lpdword_t handles, dword_t wait_type, dword_t wait_mode,
     dword_t alertable, lpqword_t timeout_ptr) {
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
+  if (timeout_ptr == nullptr || timeout != 0) {
+    auto thread = XThread::GetCurrentThread();
+    uint32_t cnt = count, type = wait_type;
+    XELOGI("NtWaitForMultipleObjectsEx: tid={:08X} cnt={} type={} timeout={}",
+           thread ? thread->thread_id() : 0, cnt, type, timeout);
+  }
   if (!count || count > 64 ||
       (wait_type != X_KWAIT_REASON::WaitAny && wait_type)) {
     return X_STATUS_INVALID_PARAMETER;
@@ -1151,8 +1203,14 @@ dword_result_t NtSignalAndWaitForSingleObjectEx_entry(dword_t signal_handle,
   auto wait_object =
       kernel_state()->object_table()->LookupObject<XObject>(wait_handle, true);
   global_critical_region::mutex().unlock();
+  uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
+  if (timeout_ptr == nullptr || timeout != 0) {
+    auto thread = XThread::GetCurrentThread();
+    uint32_t sig = signal_handle, wait_h = wait_handle;
+    XELOGI("NtSignalAndWaitForSingleObjectEx: tid={:08X} signal={:08X} wait={:08X} timeout={}",
+           thread ? thread->thread_id() : 0, sig, wait_h, timeout);
+  }
   if (signal_object && wait_object) {
-    uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
     result = XObject::SignalAndWait(signal_object.get(), wait_object.get(), 3,
                                     wait_mode, alertable,
                                     timeout_ptr ? &timeout : nullptr);

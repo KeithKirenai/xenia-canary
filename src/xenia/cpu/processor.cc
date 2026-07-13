@@ -993,11 +993,13 @@ bool Processor::StepToGuestAddress(uint32_t thread_id, uint32_t pc) {
   }
 
   // Instruct the thread to step forwards.
-  threading::Fence fence;
+  // Use atomic flag + timed wait instead of Fence to avoid hanging forever
+  // when the thread is stuck in host code.
+  std::atomic<bool> signaled{false};
   cpu::Breakpoint bp(
       this, Breakpoint::AddressType::kGuest, pc,
-      [&fence](Breakpoint* breakpoint, ThreadDebugInfo* thread_info,
-               uint64_t host_address) { fence.Signal(); });
+      [&signaled](Breakpoint* breakpoint, ThreadDebugInfo* thread_info,
+                  uint64_t host_address) { signaled.store(true); });
   bp.Resume();
 
   // HACK
@@ -1007,10 +1009,21 @@ bool Processor::StepToGuestAddress(uint32_t thread_id, uint32_t pc) {
     thread_info->thread->thread()->Resume(&suspend_count);
   }
 
-  fence.Wait();
-  bp.Suspend();
+  // Wait up to 500ms for thread to reach the breakpoint.
+  for (int i = 0; i < 50; i++) {
+    if (signaled.load()) {
+      bp.Suspend();
+      return true;
+    }
+    xe::threading::Sleep(std::chrono::milliseconds(10));
+  }
 
-  return true;
+  // Timed out — thread is stuck. Suspend it and abort.
+  thread_info->thread->thread()->Suspend();
+  bp.Suspend();
+  XELOGE("StepToGuestAddress({:08X}) timed out for thread {:08X}", pc,
+          thread_id);
+  return false;
 }
 
 uint32_t Processor::StepIntoGuestBranchTarget(uint32_t thread_id, uint32_t pc) {
@@ -1136,14 +1149,24 @@ uint32_t Processor::StepToGuestSafePoint(uint32_t thread_id, bool ignore_host) {
     xe::cpu::ppc::PPCDecodeData d;
     const xe::cpu::ppc::PPCOpcodeInfo* sync_info = nullptr;
     d.address = cpu_frames[0].guest_pc - 4;
+    constexpr uint32_t kMaxSearchInstructions = 4096;
+    uint32_t search_count = 0;
     do {
       d.address += 4;
-      d.code =
-          xe::load_and_swap<uint32_t>(memory()->TranslateVirtual(d.address));
+      auto* translated = memory()->TranslateVirtual(d.address);
+      if (!translated) {
+        // Fell out of valid memory — give up on stepping.
+        return cpu_frames[0].guest_pc ? cpu_frames[0].guest_pc : 0;
+      }
+      d.code = xe::load_and_swap<uint32_t>(translated);
       auto& opcode_info = xe::cpu::ppc::LookupOpcodeInfo(d.code);
       if (opcode_info.type == cpu::ppc::PPCOpcodeType::kSync) {
         sync_info = &opcode_info;
         break;
+      }
+      if (++search_count >= kMaxSearchInstructions) {
+        // Could not find a sync instruction — just use the current PC.
+        return cpu_frames[0].guest_pc ? cpu_frames[0].guest_pc : 0;
       }
     } while (true);
 
@@ -1210,17 +1233,9 @@ uint32_t Processor::StepToGuestSafePoint(uint32_t thread_id, bool ignore_host) {
         return StepToGuestSafePoint(thread_id, true);
       }
     } else {
-      // We've managed to catch a thread before it called into the guest.
-      // Set a breakpoint on its startup procedure and capture it there.
-      // TODO(DrChat): Reimplement
-      assert_always("Unimplemented");
-      /*
-      auto creation_params = thread->creation_params();
-      pc = creation_params->xapi_thread_startup
-               ? creation_params->xapi_thread_startup
-               : creation_params->start_address;
-      StepToGuestAddress(thread_id, pc);
-      */
+      // Thread has no guest frames — it's stuck entirely in host code.
+      // Return 0 to let the caller force-terminate instead of hanging.
+      return 0;
     }
   }
 

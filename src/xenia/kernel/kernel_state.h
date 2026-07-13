@@ -391,6 +391,10 @@ class KernelState {
   friend class XObject;
 
  public:
+  cpu::backend::GuestTrampolineGroup* kernel_trampoline_group() {
+    return &kernel_trampoline_group_;
+  }
+
   uint32_t dash_context_ = 0;
   std::unordered_map<XObject::Type, uint32_t>
       host_object_type_enum_to_guest_object_type_ptr_;

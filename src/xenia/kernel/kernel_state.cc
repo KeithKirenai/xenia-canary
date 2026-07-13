@@ -8,6 +8,7 @@
  */
 
 #include <ranges>
+#include <cstdlib>
 
 #include "xenia/kernel/kernel_state.h"
 
@@ -856,7 +857,8 @@ void KernelState::InitXmpVolumePatch() {
 }
 
 void KernelState::TerminateTitle() {
-  XELOGD("KernelState::TerminateTitle");
+  XELOGI("KernelState::TerminateTitle: ENTER");
+  xe::FlushLog();
   xmp_volume_patch_.reset();
   auto global_lock = global_critical_region_.Acquire();
 
@@ -875,11 +877,15 @@ void KernelState::TerminateTitle() {
   */
 
   // Kill all guest threads.
+  XELOGI("KernelState::TerminateTitle: killing threads, {} total",
+         threads_by_id_.size());
   for (auto it = threads_by_id_.begin(); it != threads_by_id_.end();) {
     if (!XThread::IsInThread(it->second) && it->second->is_guest_thread()) {
       auto thread = it->second;
 
       if (thread->is_running()) {
+        XELOGI("KernelState::TerminateTitle: stepping tid={:08X}",
+               thread->thread_id());
         // Need to step the thread to a safe point (returns it to guest code
         // so it's guaranteed to not be holding any locks / in host kernel
         // code / etc). Can't do that properly if we have the lock.
@@ -889,8 +895,12 @@ void KernelState::TerminateTitle() {
 
         global_lock.unlock();
         processor_->StepToGuestSafePoint(thread->thread_id());
+        XELOGI("KernelState::TerminateTitle: terminating tid={:08X}",
+               thread->thread_id());
         thread->Terminate(0);
         global_lock.lock();
+        XELOGI("KernelState::TerminateTitle: terminated tid={:08X}",
+               thread->thread_id());
       }
 
       // Erase it from the thread list.
@@ -901,12 +911,14 @@ void KernelState::TerminateTitle() {
   }
 
   // Third: Unload all user modules (including the executable).
+  XELOGI("KernelState::TerminateTitle: unloading modules");
   for (size_t i = 0; i < user_modules_.size(); i++) {
     user_modules_[i]->ReleaseHandle();
   }
   user_modules_.clear();
 
   // Release all objects in the object table.
+  XELOGI("KernelState::TerminateTitle: purging objects");
   object_table_.PurgeAllObjects();
 
   // Unregister all notify listeners.
@@ -916,13 +928,19 @@ void KernelState::TerminateTitle() {
   executable_module_ = nullptr;
 
   if (XThread::IsInThread()) {
+    XELOGI("KernelState::TerminateTitle: self-terminating current thread");
+    xe::FlushLog();
     threads_by_id_.erase(XThread::GetCurrentThread()->thread_id());
 
     // Now commit suicide (using Terminate, because we can't call into guest
     // code anymore).
     global_lock.unlock();
+    // XamLoaderTerminateTitle "does not return" — the emulator doesn't
+    // properly shut down after title termination, so force-exit.
+    std::quick_exit(EXIT_SUCCESS);
     XThread::GetCurrentThread()->Terminate(0);
   }
+  XELOGI("KernelState::TerminateTitle: DONE");
 }
 
 void KernelState::RegisterThread(XThread* thread) {

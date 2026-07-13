@@ -66,6 +66,9 @@
 #include "xenia/hid/input_driver.h"
 
 namespace xe {
+namespace kernel {
+class XEvent;
+}  // namespace kernel
 namespace hid {
 namespace kinect {
 
@@ -170,6 +173,10 @@ class KinectInputDriver final : public InputDriver {
 
   bool is_initialized() const { return initialized_.load(); }
 
+  // Skeleton frame event — PollThread signals this when new data is ready.
+  // The game creates an XEvent and waits on it; we signal it at 30fps.
+  void SetSkeletonFrameEvent(xe::kernel::XEvent* event);
+
  private:
   // Synthetic skeleton (always available, no hardware needed).
   void BuildSyntheticFrame(X_NUI_SKELETON_FRAME* frame);
@@ -211,6 +218,9 @@ class KinectInputDriver final : public InputDriver {
   X_NUI_SKELETON_FRAME frame_latest_{};
   uint32_t frame_number_{0};
   bool new_frame_{false};
+  uint32_t skeleton_event_handle_{0};  // XEvent handle to signal on new frame
+  // Host event to signal
+  xe::kernel::XEvent* skeleton_xevent_{nullptr};
 
   enum class Backend {
     None,

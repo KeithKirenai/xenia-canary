@@ -16,6 +16,7 @@
 
 #include "xenia/base/logging.h"
 #include "xenia/base/threading.h"
+#include "xenia/kernel/xevent.h"
 
 // Platform-specific dynamic loading.
 #if XE_PLATFORM_WIN32
@@ -274,6 +275,12 @@ void KinectInputDriver::NuiShutdown() {
   initialized_ = false;
 }
 
+void KinectInputDriver::SetSkeletonFrameEvent(xe::kernel::XEvent* event) {
+  skeleton_xevent_ = event;
+  XELOGI("KinectInputDriver: SetSkeletonFrameEvent event={:p}",
+         static_cast<void*>(event));
+}
+
 X_RESULT KinectInputDriver::NuiSkeletonGetNextFrame(
     uint32_t wait_ms, X_NUI_SKELETON_FRAME* out_frame) {
   if (!initialized_) return X_ERROR_DEVICE_NOT_CONNECTED;
@@ -376,6 +383,11 @@ void KinectInputDriver::PollThread() {
         BuildSyntheticFrame(&frame_latest_);
         new_frame_ = true;
         break;
+    }
+
+    // Signal the game's skeleton frame event if registered.
+    if (new_frame_ && skeleton_xevent_) {
+      skeleton_xevent_->Set(0, false);
     }
 
     auto elapsed = std::chrono::steady_clock::now() - t0;

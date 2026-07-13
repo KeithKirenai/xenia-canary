@@ -22,12 +22,16 @@ namespace xam {
 
 dword_result_t XMsgInProcessCall_entry(dword_t app, dword_t message,
                                        dword_t arg1, dword_t arg2) {
+  uint32_t m_app = app, m_msg = message, m_a1 = arg1, m_a2 = arg2;
+  XELOGI("XMsgInProcessCall: app={:08X} msg={:08X} arg1={:08X} arg2={:08X}",
+         m_app, m_msg, m_a1, m_a2);
   auto result = kernel_state()->app_manager()->DispatchMessageSync(app, message,
-                                                                   arg1, arg2);
+                                                                    arg1, arg2);
   if (result == X_ERROR_NOT_FOUND) {
-    XELOGE("XMsgInProcessCall: app {:08X} undefined",
-           static_cast<uint32_t>(app));
+    XELOGE("XMsgInProcessCall: app {:08X} undefined", m_app);
   }
+  uint32_t m_res = result;
+  XELOGI("XMsgInProcessCall: msg={:08X} returned {:08X}", m_msg, m_res);
   return result;
 }
 DECLARE_XAM_EXPORT1(XMsgInProcessCall, kNone, kImplemented);
@@ -83,6 +87,9 @@ DECLARE_XAM_EXPORT1(XMsgStartIORequestEx, kNone, kImplemented);
 dword_result_t XMsgStartIORequest_entry(
     dword_t app, dword_t message, pointer_t<XAM_OVERLAPPED> overlapped_ptr,
     dword_t buffer_ptr, dword_t buffer_length) {
+  uint32_t m_app = app, m_msg = message, m_buf = buffer_ptr, m_len = buffer_length, m_ovlp = overlapped_ptr;
+  XELOGI("XMsgStartIORequest: app={:08X} msg={:08X} buf={:08X} len={:08X} ovlp={:08X}",
+         m_app, m_msg, m_buf, m_len, m_ovlp);
   return xeXMsgStartIORequestEx(app, message, overlapped_ptr, buffer_ptr,
                                 buffer_length, nullptr);
 }
