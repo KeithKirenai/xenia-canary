@@ -8,15 +8,13 @@
 
 **Notice:** This is an experimental, work-in-progress fork of [xenia-canary](https://github.com/xenia-canary/xenia-canary) dedicated specifically to reverse-engineering and implementing **Xbox 360 Kinect (NUI) support** for emulator-related research.
 
+> [!WARNING]
+> **AI-Assisted Development Notice:** This repository features significant reverse-engineering, analysis, and coding contributions created with generative AI assistance via **Antigravity (Gemini)** and **Claude**. AI models were utilized to analyze decompiled PowerPC guest code, stub/implement complex XAM/Kernel Kinect message handlers, map USB/SDK data structures, and resolve filesystem path mapping issues.
+
 > [!NOTE]
 > This fork is built primarily for fun and exploration. It is **not** meant to be a production-grade, serious implementation, nor an official Kinect implementation just yet. The primary goal is to see how far we can make it work, experiment with getting Kinect games running, and jumpstart a solid foundation for future developers to build a proper implementation upon.
 
 Come chat with us about **emulator-related topics** on [Discord](https://discord.gg/Q9mxZf9). Please check the [FAQ](https://github.com/xenia-canary/xenia-canary/wiki/FAQ) page before asking questions.
-
----
-
-### 🤖 AI-Assisted Development
-This repository features significant reverse-engineering, analysis, and coding contributions created with generative AI assistance via **Antigravity (Gemini)** and **Claude**. AI models were utilized to analyze decompiled PowerPC guest code, stub/implement complex XAM/Kernel Kinect message handlers, map USB/SDK data structures, and resolve filesystem path mapping issues.
 
 ---
 
