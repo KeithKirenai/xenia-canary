@@ -144,12 +144,31 @@ Entry* VirtualFileSystem::ResolvePath(const std::string_view path) {
         return xe::utf8::starts_with(normalized_path, d->mount_path());
       });
   if (it == devices_.cend()) {
-    // Supress logging the error for ShaderDumpxe:\CompareBackEnds as this is
-    // not an actual problem nor something we care about.
-    if (path != "ShaderDumpxe:\\CompareBackEnds") {
-      XELOGE("ResolvePath({}) failed - device not found", path);
+    std::string fallback_path;
+    if (xe::utf8::starts_with(normalized_path, "\\") || xe::utf8::starts_with(normalized_path, "/")) {
+      fallback_path = "game:" + normalized_path;
+    } else {
+      fallback_path = "game:\\" + normalized_path;
     }
-    return nullptr;
+    auto canonical_fallback = xe::utf8::canonicalize_guest_path(fallback_path);
+    std::string resolved_fallback;
+    if (ResolveSymbolicLink(canonical_fallback, resolved_fallback)) {
+      canonical_fallback = resolved_fallback;
+    }
+    it = std::find_if(devices_.cbegin(), devices_.cend(), [&](const auto& d) {
+      return xe::utf8::starts_with(canonical_fallback, d->mount_path());
+    });
+    if (it == devices_.cend()) {
+      // Supress logging the error for ShaderDumpxe:\CompareBackEnds as this is
+      // not an actual problem nor something we care about.
+      if (path != "ShaderDumpxe:\\CompareBackEnds") {
+        XELOGE("ResolvePath({}) failed - device not found", path);
+      }
+      return nullptr;
+    }
+    const auto& device = *it;
+    auto relative_path = canonical_fallback.substr(device->mount_path().size());
+    return device->ResolvePath(relative_path);
   }
 
   const auto& device = *it;

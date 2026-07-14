@@ -4,17 +4,39 @@
     </a>
 </p>
 
-<h1 align="center">Xenia Canary - Xbox 360 Emulator</h1>
+# 🚧 Xenia Canary - Kinect Implementation (WIP) 🚧
 
-Xenia Canary is an experimental fork of the Xenia emulator. For more information, see the
-[Xenia Canary wiki](https://github.com/xenia-canary/xenia-canary/wiki).
+**Notice:** This is an experimental, work-in-progress fork of [xenia-canary](https://github.com/xenia-canary/xenia-canary) dedicated specifically to reverse-engineering and implementing **Xbox 360 Kinect (NUI) support** for emulator-related research.
 
-Come chat with us about **emulator-related topics** on [Discord](https://discord.gg/Q9mxZf9).
-For developer chat join `#dev` but stay on topic. Lurking is not only fine, but encouraged!
-Please check the [FAQ](https://github.com/xenia-canary/xenia-canary/wiki/FAQ) page before asking questions.
-We've got jobs/lives/etc, so don't expect instant answers.
+> [!NOTE]
+> This fork is built primarily for fun and exploration. It is **not** meant to be a production-grade, serious implementation, nor an official Kinect implementation just yet. The primary goal is to see how far we can make it work, experiment with getting Kinect games running, and jumpstart a solid foundation for future developers to build a proper implementation upon.
 
-Discussing illegal activities will get you banned.
+Come chat with us about **emulator-related topics** on [Discord](https://discord.gg/Q9mxZf9). Please check the [FAQ](https://github.com/xenia-canary/xenia-canary/wiki/FAQ) page before asking questions.
+
+---
+
+### 🤖 AI-Assisted Development
+This repository features significant reverse-engineering, analysis, and coding contributions created with generative AI assistance via **Antigravity (Gemini)** and **Claude**. AI models were utilized to analyze decompiled PowerPC guest code, stub/implement complex XAM/Kernel Kinect message handlers, map USB/SDK data structures, and resolve filesystem path mapping issues.
+
+---
+
+## Current Status
+
+We are working toward full Kinect hardware-level emulation (HLE). Our testing focuses primarily on `nuitest` (NUIView.exe) and *Fruit Ninja Kinect* (title ID 58410B79).
+
+### ✅ What Works
+- **Dynamic SDK & Driver Loading**: Dynamic loading of Windows `Kinect10.dll` SDK (for real Kinect v1 hardware) as well as OpenNI2/NiTE2 and libfreenect drivers.
+- **Poll Thread & Skeleton Telemetry**: An active background thread mapping joint angles and positions (including 15-joint OpenNI2 to 20-joint Xbox Layout) or generating a synthetic T-pose skeleton for testing.
+- **NUI Kernel/XAM APIs**: 50+ `XamNui*` function stubs and kernel `PsCamDeviceRequest`/`McaDeviceRequest` device interfaces returning successful states.
+- **COM Message Dispatch**: Message handlers implemented for NUI session management and request/response frames (`0x2B001`-`0x2B005`, `0x2C009`, `0x2C00C`, `0x2C00D`, `0x58004`, `0x58035`).
+- **Filesystem Resolution**: Fixed symbolic link VFS relative path resolution fallbacks allowing games to load Kinect config files (e.g., `itemList.fnk`, etc.).
+
+### 🚧 What's Under Active Development / Troubleshooting
+- **Black Screen / Frame Loop Troubleshooting**: Resolving worker/JIT thread execution events to prevent the game engine from blocking during JIT compiling or background wait cycles.
+- **Render Viewport Integration**: Mapping video/depth streams to display buffers correctly.
+- **Windows SDK Elevation Hooks**: Aligning actual Windows SDK camera tilt functions (`NuiCameraElevationSetAngle` / `NuiCameraElevationGetAngle`) with the game's expected internal exports.
+
+---
 
 ## Status
 
@@ -36,12 +58,6 @@ See the [Quickstart](https://github.com/xenia-canary/xenia-canary/wiki/Quickstar
 
 See the [frequently asked questions](https://github.com/xenia-canary/xenia-canary/wiki/FAQ) page.
 
-## Game Compatibility
-
-See the [Game compatibility list](https://github.com/xenia-canary/game-compatibility/issues)
-for currently tracked games, and feel free to contribute your own updates,
-screenshots, and information there following the [existing conventions](https://github.com/xenia-canary/game-compatibility/blob/canary/README.md).
-
 ## Building
 
 See [building.md](docs/building.md) for setup and information about the
@@ -50,7 +66,7 @@ and be sure to run clang-format!
 
 ## Contributors Wanted!
 
-Have some spare time, know advanced C++, and want to write an emulator?
+Have some spare time, know advanced C++, and want to write an emulator or work with depth sensors?
 Contribute! There's a ton of work that needs to be done, a lot of which
 is wide open greenfield fun.
 
@@ -71,5 +87,4 @@ something.
 The goal of this project is to experiment, research, and educate on the topic
 of emulation of modern devices and operating systems. **It is not for enabling
 illegal activity**. All information is obtained via reverse engineering of
-legally purchased devices and games and information made public on the internet
-(you'd be surprised what's indexed on Google...).
+legally purchased devices and games and information made public on the internet.

@@ -544,6 +544,8 @@ X_STATUS XThread::Terminate(int exit_code) {
 void XThread::Execute() {
   XELOGKERNEL("XThread::Execute thid {} (handle={:08X}, '{}', native={:08X})",
               thread_id_, handle(), thread_name_, thread_->system_id());
+  XELOGI("XThread::Execute start_address={:08X}, xapi_thread_startup={:08X}",
+         creation_params_.start_address, creation_params_.xapi_thread_startup);
   // Let the kernel know we are starting.
   kernel_state()->OnThreadExecute(this);
 

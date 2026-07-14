@@ -10,11 +10,16 @@
 #include "xenia/kernel/xam/apps/xlivebase_app.h"
 
 #include "xenia/base/logging.h"
+#include "xenia/hid/kinect/kinect_input_driver.h"
 
 namespace xe {
 namespace kernel {
 namespace xam {
 namespace apps {
+
+static xe::hid::kinect::KinectInputDriver* kd() {
+  return xe::hid::kinect::KinectInputDriver::instance();
+}
 
 XLiveBaseApp::XLiveBaseApp(KernelState* kernel_state)
     : App(kernel_state, 0xFC) {}
@@ -51,7 +56,25 @@ X_HRESULT XLiveBaseApp::DispatchMessageSync(uint32_t message,
       /* Notes:
          - Called on startup, seems to just return a bool in the buffer.
          - It is Saved elsewhere and used here
-      */
+         - Fruit Ninja uses 0x58004 with a 112-byte buffer for NUI session setup.
+       */
+      if (buffer_length >= 112) {
+        if (kd() && !kd()->is_initialized()) {
+          kd()->NuiInitialize(0x08);
+        }
+        auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+        if (out && buffer_length >= 16) {
+          XELOGI("XLiveBaseApp: 0x58004 NUI session setup: {:08X} {:08X} {:08X} {:08X} (buf_len={:08X})",
+                 xe::byte_swap(out[0]), xe::byte_swap(out[1]),
+                 xe::byte_swap(out[2]), xe::byte_swap(out[3]),
+                 buffer_length);
+        } else {
+          XELOGI("XLiveBaseApp: 0x58004 NUI session setup (buf={:08X}, len={:08X})",
+                 buffer_ptr, buffer_length);
+        }
+        return X_E_SUCCESS;
+      }
+
       assert_true(!buffer_length || buffer_length == 4);
       XELOGD("XLiveBaseGetLogonId({:08X})", buffer_ptr);
       xe::store_and_swap<uint32_t>(buffer, 1);  // ?
@@ -86,6 +109,24 @@ X_HRESULT XLiveBaseApp::DispatchMessageSync(uint32_t message,
           "unimplemented",
           buffer_ptr, buffer_length);
       return X_E_FAIL;
+    }
+    case 0x00058035: {
+      // NUI frame/data request (Fruit Ninja).
+      // ~40-byte buffer.
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      if (out) {
+        XELOGI("XLiveBaseApp: 0x58035 NUI frame request: {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} (buf_len={:08X})",
+               xe::byte_swap(out[0]), xe::byte_swap(out[1]),
+               xe::byte_swap(out[2]), xe::byte_swap(out[3]),
+               xe::byte_swap(out[4]), xe::byte_swap(out[5]),
+               xe::byte_swap(out[6]), xe::byte_swap(out[7]),
+               xe::byte_swap(out[8]), buffer_length);
+      }
+      if (kd() && kd()->is_initialized() && buffer_length >= 40) {
+        xe::store_and_swap<uint32_t>(&out[0], 0x000000fe); // Session handle
+        xe::store_and_swap<uint32_t>(&out[1], 0);          // Success status
+      }
+      return X_E_SUCCESS;
     }
     case 0x00058037: {
       XELOGD("XPresenceInitialize({:08X}, {:08X})", buffer_ptr, buffer_length);

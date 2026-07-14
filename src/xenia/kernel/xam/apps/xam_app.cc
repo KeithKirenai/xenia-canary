@@ -399,6 +399,85 @@ X_HRESULT XamApp::DispatchMessageSync(uint32_t message, uint32_t buffer_ptr,
     case 0x00021030: {
       return X_E_SUCCESS;
     }
+    case 0x0002C009: {
+      // NUI device query (Fruit Ninja).
+      // Single 4-byte parameter in buffer.
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      uint32_t param = out ? xe::byte_swap(out[0]) : 0;
+      XELOGI("XamApp: 0x2C009 NUI device query param={:08X} → S_OK", param);
+      return X_E_SUCCESS;
+    }
+    case 0x0002C00C: {
+      // NUI device configuration (Fruit Ninja).
+      // 6 parameters: 4+8+4+4+4+4 = 28 bytes.
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      if (out && buffer_length >= 28) {
+        XELOGI("XamApp: 0x2C00C NUI device config: {:08X} {:08X}{:08X} {:08X} {:08X} {:08X} {:08X}",
+               xe::byte_swap(out[0]), xe::byte_swap(out[1]), xe::byte_swap(out[2]),
+               xe::byte_swap(out[3]), xe::byte_swap(out[4]),
+               xe::byte_swap(out[5]), xe::byte_swap(out[6]));
+      } else {
+        XELOGI("XamApp: 0x2C00C NUI device config (buf={:08X}, len={:08X})",
+               buffer_ptr, buffer_length);
+      }
+      return X_E_SUCCESS;
+    }
+    case 0x0002C00D: {
+      // NUI device configuration (Fruit Ninja).
+      // 4 parameters: 4+8+4+4 = 20 bytes.
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      if (out && buffer_length >= 20) {
+        XELOGI("XamApp: 0x2C00D NUI device config: {:08X} {:08X}{:08X} {:08X} {:08X}",
+               xe::byte_swap(out[0]), xe::byte_swap(out[1]), xe::byte_swap(out[2]),
+               xe::byte_swap(out[3]), xe::byte_swap(out[4]));
+      } else {
+        XELOGI("XamApp: 0x2C00D NUI device config (buf={:08X}, len={:08X})",
+               buffer_ptr, buffer_length);
+      }
+      return X_E_SUCCESS;
+    }
+    case 0x00058004: {
+      // NUI session setup (Fruit Ninja).
+      // 112-byte buffer with session/stream configuration.
+      // Ensure KinectInputDriver is initialized.
+      if (kd() && !kd()->is_initialized()) {
+        kd()->NuiInitialize(0x08);
+      }
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      if (out && buffer_length >= 16) {
+        XELOGI("XamApp: 0x58004 NUI session setup: {:08X} {:08X} {:08X} {:08X} (buf_len={:08X})",
+               xe::byte_swap(out[0]), xe::byte_swap(out[1]),
+               xe::byte_swap(out[2]), xe::byte_swap(out[3]),
+               buffer_length);
+      } else {
+        XELOGI("XamApp: 0x58004 NUI session setup (buf={:08X}, len={:08X})",
+               buffer_ptr, buffer_length);
+      }
+      return X_E_SUCCESS;
+    }
+    case 0x00058035: {
+      // NUI frame/data request (Fruit Ninja).
+      // ~40-byte buffer. Caller checks for E_INVALIDARG (0x80070057)
+      // and ERROR_INSUFFICIENT_BUFFER (0x8007007A).
+      // Fill buffer with skeleton frame data if possible.
+      auto* out = memory_->TranslateVirtual<uint32_t*>(buffer_ptr);
+      if (out) {
+        XELOGI("XamApp: 0x58035 NUI frame request: {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} {:08X} (buf_len={:08X})",
+               xe::byte_swap(out[0]), xe::byte_swap(out[1]),
+               xe::byte_swap(out[2]), xe::byte_swap(out[3]),
+               xe::byte_swap(out[4]), xe::byte_swap(out[5]),
+               xe::byte_swap(out[6]), xe::byte_swap(out[7]),
+               xe::byte_swap(out[8]), buffer_length);
+      }
+      // Attempt to fill with skeleton frame data if KinectInputDriver is ready.
+      if (kd() && kd()->is_initialized() && buffer_length >= 40) {
+        // Write success status in first field (after app handle).
+        xe::store_and_swap<uint32_t>(&out[0], 0x000000fe);
+        xe::store_and_swap<uint32_t>(&out[1], 0);
+        // Remaining fields left as-is for now; game will check status.
+      }
+      return X_E_SUCCESS;
+    }
     // Causes dashboard to correctly process language/region change. It does not
     // contain any buffer.
     case 0x8000000D: {

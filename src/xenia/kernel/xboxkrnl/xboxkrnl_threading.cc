@@ -1039,8 +1039,9 @@ dword_result_t KeWaitForSingleObject_entry(lpvoid_t object_ptr,
                                            lpqword_t timeout_ptr) {
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
   auto thread = XThread::GetCurrentThread();
-  XELOGI("KeWaitForSingleObject: tid={:08X} obj={:08X} timeout={}",
-         thread ? thread->thread_id() : 0,
+  uint32_t lr = thread ? thread->thread_state()->context()->lr : 0;
+  XELOGI("KeWaitForSingleObject: tid={:08X} lr={:08X} obj={:08X} timeout={}",
+         thread ? thread->thread_id() : 0, lr,
          static_cast<uint32_t>(object_ptr), timeout);
   return xeKeWaitForSingleObject(object_ptr, wait_reason, processor_mode,
                                  alertable, timeout_ptr ? &timeout : nullptr);
@@ -1174,9 +1175,13 @@ dword_result_t NtWaitForMultipleObjectsEx_entry(
   uint64_t timeout = timeout_ptr ? static_cast<uint64_t>(*timeout_ptr) : 0u;
   if (timeout_ptr == nullptr || timeout != 0) {
     auto thread = XThread::GetCurrentThread();
+    uint32_t lr = thread ? thread->thread_state()->context()->lr : 0;
     uint32_t cnt = count, type = wait_type;
-    XELOGI("NtWaitForMultipleObjectsEx: tid={:08X} cnt={} type={} timeout={}",
-           thread ? thread->thread_id() : 0, cnt, type, timeout);
+    XELOGI("NtWaitForMultipleObjectsEx: tid={:08X} lr={:08X} cnt={} type={} timeout={}",
+           thread ? thread->thread_id() : 0, lr, cnt, type, timeout);
+    for (uint32_t i = 0; i < cnt; ++i) {
+      XELOGI("  handle[{}] = {:08X}", i, static_cast<uint32_t>(handles[i]));
+    }
   }
   if (!count || count > 64 ||
       (wait_type != X_KWAIT_REASON::WaitAny && wait_type)) {
